@@ -1,4 +1,4 @@
-# EVAT - Electric Vehicle Assistant Technology
+# EVAT - Electric Vehicle Adoption Tools
 
 A conversational AI chatbot designed to help electric vehicle users find charging stations and get relevant information using Rasa framework.
 
