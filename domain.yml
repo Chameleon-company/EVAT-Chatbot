@@ -17,6 +17,7 @@ intents:
   - out_of_scope
   - nlu_fallback
   - charger_info
+  - directions
 
 entities: 
   - place
