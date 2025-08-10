@@ -6,21 +6,37 @@ stories:
   steps:
     - intent: Nearest_Charging_Station
     - action: Action_Get_Nearest_Station
-    - intent: affirm 
+    - intent: directions
     - action: Get_Directions_action
 
-- story: Nearest Station and information. 
+
+#might need to replace direction with yes intent
+- story: Nearest Station and information then direction. 
   steps:
     - intent: ask_for_nearest_station
     - action: Action_Get_Nearest_Station
     - intent: charger_info
     - action: Action_charger_info
+    - intent: direction
+    - action: Get_Directions_action
     
 
-- story: To_Charging_Station 
+- story: To_Charging_Station then direction
   steps: 
     - intent: ask_To_Station
     - action: Action_To_Charging_Station
+    - intent: direction
+    - action: Get_Directions_action
+
+#might need to replace direction with yes intent
+- story: To_Charging_Station then information then direction
+  steps: 
+    - intent: ask_To_Station
+    - action: Action_To_Charging_Station
+    - intent: charger_info
+    - action: Action_charger_info
+    - intent: direction
+    - action: Get_Directions_action
 
 - story: How_Long_To_Charge
   steps: 

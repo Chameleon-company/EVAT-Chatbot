@@ -15,6 +15,9 @@ from backend.find_station import get_route_details
 from backend.find_station import get_charging_station_availability
 import pandas as pd
 
+import csv #add to requirments.txt
+import math #add to requirments.txt
+
 
 # This is a simple example for a custom action which utters "Hello World!"
 
@@ -51,6 +54,7 @@ class ActionGetNearestStation(Action):
         latitude = metadata.get("lat")
         longitude = metadata.get("lon")
 
+
         if not latitude and not longitude:
             latitude = -37.85580046992546
             longitude = 145.08025857057336
@@ -62,8 +66,10 @@ class ActionGetNearestStation(Action):
         
         if latitude and longitude:
 
-            dispatcher.utter_message(text="I am fetching the nearest station information.")
+            dispatcher.utter_message(text="I am finding the nearest charging station")
             result = find_station(user_location)
+            location_of_station = str(result['Address'])
+            dispatcher.utter_message(location_of_station)
 
             if result:            
                 
@@ -71,15 +77,30 @@ class ActionGetNearestStation(Action):
                 dispatcher.utter_message(text=f"It is located at {result['Address']}")
                 dispatcher.utter_message(text=f"It is about {result['Distance']} KM away")
                 dispatcher.utter_message(text=f"This will take you about {result['ETA']} minutes")
-                dispatcher.utter_message("Would you like directions?")
+                dispatcher.utter_message("Would you like directions or further information about this charging station")
                 
-                return [SlotSet("Charger Name", result['Address'])] 
+               
+                
+                 
             else:
                 dispatcher.utter_message("Sorry, no charger is currently available in your location")
         else:
             # No location available
             dispatcher.utter_message("Sorry, I couldn't retrieve your location.")
-            return []
+           
+        with open("data\raw\ml_ev_charging_dataset.csv", "r") as file:
+                reader = csv.reader(file)
+
+                for row in reader:
+                   if row[4].str.strip().str.lower() == result['Address'].str.strip().str.lower():
+                       
+                       charge_location_lat = row[3]
+                       charge_location_long =row[2]
+                       break 
+                else:
+                    print("sorry this location doesnt seem to have a charging station")
+
+        return [SlotSet("station_latitude", charge_location_lat), SlotSet("station_longitude", charge_location_long)]
     
 
 class ActionToChargingStation(Action):
@@ -91,7 +112,9 @@ class ActionToChargingStation(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
-        station = list(tracker.get_latest_entity_values("place"))
+        
+
+        station = list(tracker.get_latest_entity_values("place")) #entity extraction
         metadata = tracker.latest_message.get('metadata', {})
 
         latitude = metadata.get("lat")
@@ -102,49 +125,49 @@ class ActionToChargingStation(Action):
             longitude = 145.08025857057336
             # manual location due to geocoder not getting my location -37.85580046992546, 145.08025857057336
 
-
-        df = pd.read_csv("datasets/Co-oridnates.csv")
-        df = df.astype(str)
-        charging_station = df[df["suburb"].str.strip().str.lower() == station[0]]
-        station_info = charging_station.iloc[0]
         
-        destination = (station_info['longitude'], station_info['latitude'])
-       
+      
+       #check if the location the user has specified as a charging station. 
+        with open("data\raw\Co-oridnates.csv", "r") as file:
+                reader = csv.reader(file)
+
+                for row in reader:
+                    if row[0].str.strip().str.lower() == station.str.strip().str.lower():
+                        suburb_location_lat = row[1]
+                        suburb_location_long = row[2]
+                        break
+                else:
+                    print("sorry that location seems to not have a charging station.")
+        
+
+
+        #convert suburb location to charging station location. 
+        with open("data\raw\ml_ev_charging_dataset.csv", "r") as file:
+                reader = csv.reader(file)
+
+                for row in reader:
+                   if row[7] == suburb_location_lat and row[8] == suburb_location_long:
+                       charge_location_lat = row[7]
+                       charge_location_long =row[8]
+                       break 
+                else:
+                    print("sorry this location doesnt seem to have a charging station")
+        
         
     
         user_location = (longitude, latitude,)
+        destination = (charge_location_long, charge_location_lat)
+        
         if station:
 
-
             station_name = station[0]  
-            dispatcher.utter_message(text=f"I understand. Taking you to the {station_name} charging station.")
-            result = get_route_details(user_location, destination)
-
-            if result:
-                    directions = result["instructions"]
-                    for step in directions:
-                     dispatcher.utter_message(text=(step))
-            else:
-                print("Could not retrieve route directions.")
-            
-            
-
+            dispatcher.utter_message("Would you like directions or further information about this charging station")
         else:
             
             dispatcher.utter_message(text="i did not extract a location")
-        
+     
 
-
-
-
-
-
-
-
-
-
-
-        return []
+        return [SlotSet("station_latitude", charge_location_lat), SlotSet("station_longitude", charge_location_long)]
     
 
        
@@ -161,8 +184,16 @@ class ActionHowLongToCharge(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
-        dispatcher.utter_message(text="It takes 20hr on slow, 12hr on 7kw fast, 7hr on 22kw fast, 1 hr on 43-50kw rapid, 30min on 150kw charge")
+        #all in kwh
+        capacity = 100
+        charge_rate = 5
+        bat_charge = 0
         
+        capacity_to_charge = capacity - (capacity * bat_charge)
+        charge_time = capacity_to_charge/(charge_rate * 0.9)
+        min, hour = math.modf(charge_time)
+        min = round(min * 60)
+        dispatcher.utter_message(text=f"it will take {int(hour)}hr {min}m to charge")
         
         return []
     
@@ -173,9 +204,18 @@ class ActionDistanceICanGo(Action):
     
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        #kwh
+        capacity = 100
+        #kwh/kelomity 
+        consumption = 0.12
 
-        dispatcher.utter_message(text="depending on your car and driving style. you can expect between. 320 to 480km on a full charge")
-        
+
+        bat_charge = 0.5
+        capacity_to_charge = capacity - (capacity * bat_charge)
+        distance = capacity_to_charge/consumption
+
+
+        dispatcher.utter_message(text=f"you have about {distance}km before empty")
         
         return []
 
@@ -230,33 +270,28 @@ class ActionChargerInfo(Action):
         return "Action_charger_info"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        df = pd.read_csv("datasets/charger_info_mel.csv")
-        df = df.astype(str)
-        address = tracker.get_slot("Charger Name")
-        
-        
-        
-        dispatcher.utter_message(text="Sure, here are important information about the charging station.")
-        
-        
-        charging_station = df[df["Address"].str.strip().str.lower() == address.strip().lower()]
-        print(address)
-        print(address)
-        print(address)
-        print(charging_station)
-            
-        if not charging_station.empty:
-            station_info = charging_station.iloc[0]  
 
-            dispatcher.utter_message(text=f"Suburb: {station_info['City']}")
-            dispatcher.utter_message(text=f"Power output: {station_info['Power (kW)']} kW")
-            dispatcher.utter_message(text=f"Usage costs: {station_info['Usage Cost']}")
-            dispatcher.utter_message(text=f"Total charges: {station_info['Number of Points']}")
-            dispatcher.utter_message(text=f"Connection type: {station_info['Connection Types']}")
-            #get_charging_station_availability()
-        else:
-            dispatcher.utter_message(text=f"sorry we are unable to get details from the {address} charging station")
-            
+        charge_location_lat = tracker.get_slot("station_latitude")
+        charge_location_long = tracker.get_slot("station_longitude")
+
+        if not charge_location_lat:
+            dispatcher.utter_message(text="please tell us either a location or nearest location.")
+            return []
+
+        
+
+        with open("data\raw\charger_info_mel.csv", "r") as file:
+            reader = csv.reader(file)
+
+            for row in reader:
+                if row[9] == charge_location_lat and row[10] == charge_location_long:
+                    dispatcher.utter_message(text="here is information about this charging startion.")
+                    dispatcher.utter_message(text=f"power output {row[5]}")
+                    dispatcher.utter_message(text=f"usage cost {row[6]}")
+                    dispatcher.utter_message(text=f"number of chargers {row[7]}")
+                    dispatcher.utter_message(text=f"connection types {row[8]}")
+                else: 
+                    dispatcher.utter_message(text="Sorry we dont have the required data for this charging station.")      
         
         return []
     
@@ -268,12 +303,15 @@ class ActionDefaultFallback(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         
-        
+        #get location in cords to the charging station through slots. then use "get ruite details" method to go to those coords
 
         metadata = tracker.latest_message.get('metadata', {})
 
         latitude = metadata.get("lat")
         longitude = metadata.get("lon")
+
+        charge_location_lat = tracker.get_slot("station_latitude")
+        charge_location_long = tracker.get_slot("station_longitude")
 
         if not latitude and not longitude:
             latitude = -37.85580046992546
@@ -283,9 +321,11 @@ class ActionDefaultFallback(Action):
         
         
         user_location = (longitude, latitude)
+        station_location = (charge_location_long, charge_location_lat)
 
-        result = find_station(user_location)
-        dispatcher.utter_message(text=f"Your closest charging station is {result['Instructions']}")
+        result =  get_route_details(user_location, station_location)
+        
+
         
         if "Instructions" in result:
             print("\nInstructions:")
