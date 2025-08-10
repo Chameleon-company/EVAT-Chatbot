@@ -10,34 +10,10 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 from typing import Any, Text, Dict, List
-from backend.find_station import find_station
+from backend.find_station import find_available_station, find_station, get_coordinates, get_nearby_stations
 from backend.find_station import get_route_details
 from backend.find_station import get_charging_station_availability
 import pandas as pd
-
-
-# This is a simple example for a custom action which utters "Hello World!"
-
-# from typing import Any, Text, Dict, List
-#
-# from rasa_sdk import Action, Tracker
-# from rasa_sdk.executor import CollectingDispatcher
-#
-#
-# class ActionHelloWorld(Action):
-#
-#     def name(self) -> Text:
-#         return "action_hello_world"
-#
-#     def run(self, dispatcher: CollectingDispatcher,
-#             tracker: Tracker,
-#             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-#
-#         dispatcher.utter_message(text="Hello World!")
-#
-#         return []
-
-
 
 class ActionGetNearestStation(Action):
 
@@ -64,6 +40,7 @@ class ActionGetNearestStation(Action):
 
             dispatcher.utter_message(text="I am fetching the nearest station information.")
             result = find_station(user_location)
+            
 
             if result:            
                 
@@ -91,33 +68,37 @@ class ActionToChargingStation(Action):
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
-        station = list(tracker.get_latest_entity_values("place"))
+        area = station = list(tracker.get_latest_entity_values("place"))
         metadata = tracker.latest_message.get('metadata', {})
 
         latitude = metadata.get("lat")
         longitude = metadata.get("lon")
 
+        # dispatcher.utter_message(text=f"I am fetching the route to the charging station in {station} with ({latitude},{longitude}) with metadata:{metadata}.\n latest message: {tracker.latest_message}")
+        
         if not latitude and not longitude:
             latitude = -37.85580046992546
             longitude = 145.08025857057336
             # manual location due to geocoder not getting my location -37.85580046992546, 145.08025857057336
-
-
-        df = pd.read_csv("datasets/Co-oridnates.csv")
-        df = df.astype(str)
-        charging_station = df[df["suburb"].str.strip().str.lower() == station[0]]
-        station_info = charging_station.iloc[0]
-        
-        destination = (station_info['longitude'], station_info['latitude'])
-       
-        
-    
         user_location = (longitude, latitude,)
+
+        nearby_stations = find_available_station(get_coordinates(area))
+        # print("Nearby stations:", nearby_stations)
+        dispatcher.utter_message(text=f"Nearby stations:  ")
+        for station in nearby_stations:
+            dispatcher.utter_message(text=f"{station['Name']} at {station['Address']} - {station['Distance']} KM away - {station['ETA']} minutes")
+        # print("Nearby stations:", nearby_stations)
+        # df = pd.read_csv("datasets/Co-oridnates.csv")
+        # df = df.astype(str)
+        # charging_station = df[df["suburb"].str.strip().str.lower() == station[0]]
+        # station_info = charging_station.iloc[0]
+        station_info = nearby_stations[0]
+        destination = (station_info['Location'][0], station_info['Location'][1])
+       
         if station:
-
-
-            station_name = station[0]  
-            dispatcher.utter_message(text=f"I understand. Taking you to the {station_name} charging station.")
+            # station_name = station[0]  
+            dispatcher.utter_message(text=f"I understand. Taking you to the {station_info['Name']} charging station from {user_location} to {destination}.")
+            
             result = get_route_details(user_location, destination)
 
             if result:
@@ -186,15 +167,104 @@ class ActionFilterStations(Action):
     def name(self) -> Text:
         return "Action_Filter_Stations"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        filter_preferences = tracker.get_slot("filter_preferences")
+    def get_connector_type_code(self, connector_type: str) -> str:
+        connector_mapping = {
+            'type 2': 'IEC_62196_2_TYPE_2',
+            'ccs': 'IEC_62196_3_COMBO_2',
+            'chademo': 'CHADEMO',
+            'tesla': 'TESLA'
+        }
+        return connector_mapping.get(connector_type.lower())
 
-        if filter_preferences:
-            dispatcher.utter_message(text=f"Filtering stations based on your preference: {filter_preferences}")
-        else:
-            dispatcher.utter_message(text="No filter preferences found. Showing all stations.")
+    def get_power_level(self, speed: str) -> float:
+        speed_mapping = {
+            'ultra-fast': 150.0,
+            'rapid': 100.0,
+            'fast': 50.0,
+            'standard': 22.0,
+            'slow': 3.7
+        }
+        return speed_mapping.get(speed.lower(), 50.0)
+
+    def extract_preferences_from_entities(self, tracker: Tracker) -> Dict[str, Any]:
+        preferences = {
+            'connectorTypes': [],
+            'minPowerKW': None,
+            'chargingSpeed': None,
+            'availability': False,
+            'pricePreference': None
+        }
         
-        return []
+        # Extract connector types
+        for connector in tracker.get_latest_entity_values("connector_type"):
+            if code := self.get_connector_type_code(connector):
+                preferences['connectorTypes'].append(code)
+        
+        # Extract charging speed and power level
+        charging_speed = next(tracker.get_latest_entity_values("charging_speed"), None)
+        power_level = next(tracker.get_latest_entity_values("power_level"), None)
+        
+        if power_level:
+            preferences['minPowerKW'] = float(power_level)
+            # Determine charging speed based on power level
+            if float(power_level) >= 150:
+                preferences['chargingSpeed'] = 'ultra-fast'
+            elif float(power_level) >= 50:
+                preferences['chargingSpeed'] = 'fast'
+            else:
+                preferences['chargingSpeed'] = 'standard'
+        elif charging_speed:
+            preferences['minPowerKW'] = self.get_power_level(charging_speed)
+            preferences['chargingSpeed'] = charging_speed.lower()
+        
+        # Extract price preference
+        price = next(tracker.get_latest_entity_values("price"), None)
+        if price:
+            if price.lower() in ['free', 'no cost']:
+                preferences['pricePreference'] = 'free'
+            elif any(word in price.lower() for word in ['cheap', 'affordable', '$']):
+                preferences['pricePreference'] = 'low'
+        
+        return preferences
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        preferences = self.extract_preferences_from_entities(tracker)
+        dispatcher.utter_message(f"{tracker.latest_message}")
+        # print(f"Extracted preferences: {preferences}")
+        # dispatcher.utter_message(f"Extracted preferences: {preferences}")
+        
+        if any(preferences.values()):
+            response_text = "I understand you're looking for charging stations with these criteria:\n"
+            
+            # Connector types
+            if preferences['connectorTypes']:
+                connector_names = [conn.replace('IEC_62196_', '').replace('_', ' ').title() for conn in preferences['connectorTypes']]
+                response_text += f"- Connector types: {', '.join(connector_names)}\n"
+            
+            # Charging speed and power level
+            if preferences['chargingSpeed'] or preferences['minPowerKW']:
+                speed_text = preferences['chargingSpeed'].replace('-', ' ').title() if preferences['chargingSpeed'] else ''
+                power_text = f" ({preferences['minPowerKW']}+ kW)" if preferences['minPowerKW'] else ''
+                response_text += f"- {speed_text} charging{power_text}\n"
+            
+            # Price preference
+            if preferences['pricePreference']:
+                response_text += f"- Price preference: {preferences['pricePreference'].title()}\n"
+            
+            dispatcher.utter_message(text=response_text)
+            
+            # Convert preferences to JSON string for storage
+            import json
+            preferences_json = json.dumps(preferences)
+        else:
+            dispatcher.utter_message(text="I couldn't identify specific preferences. You can specify:\n"
+                                       "- Connector types (Type 2, CCS, CHAdeMO, Tesla)\n"
+                                       "- Charging speed (Fast, Ultra-fast)\n"
+                                       "- Power level (e.g., 50kW, 150kW)\n"
+                                       "- Price preference (Free, Affordable)")
+            preferences_json = "{}"
+        
+        return [SlotSet("filter_preferences", preferences_json)]
 
 
 
@@ -234,8 +304,11 @@ class ActionChargerInfo(Action):
         df = df.astype(str)
         address = tracker.get_slot("Charger Name")
         
+        if not address:
+            dispatcher.utter_message(text=f"Sorry, I couldn't find which charging station you meant {address}")
+            return []
         
-        
+        print("\n\n\n", address, "\n\n\n")
         dispatcher.utter_message(text="Sure, here are important information about the charging station.")
         
         

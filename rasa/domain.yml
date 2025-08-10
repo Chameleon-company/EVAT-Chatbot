@@ -20,6 +20,10 @@ intents:
 
 entities: 
   - place
+  - charging_speed
+  - connector_type
+  - price
+  - power_level
 slots:
   location:
       type: text
@@ -33,13 +37,39 @@ slots:
     mappings:
       - type: custom
 
+  charging_speed:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: charging_speed
 
+  connector_type:
+    type: list
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: connector_type
+
+  power_level:
+    type: float
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: power_level
+
+  price:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: price
 
   filter_preferences:
     type: text
     influence_conversation: true
     mappings:
-      - type: from_text
+      - type: custom
 
   traffic_aware:
     type: bool
