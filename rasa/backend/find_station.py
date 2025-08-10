@@ -5,8 +5,24 @@ from math import radians, sin, cos, sqrt, atan2
 # Fixed options for limiting number of API calls
 NUMBER_OF_RESULTS = 5  # Number of closest results to fetch per iteration
 MAX_ITERATIONS = 3  # Maximum number of iterations to avoid excessive API calls
-TOMTOM_API_KEY = "2p4OcGzjWEPmyw09G5I1hIDiwdX0Fd6i"
+TOMTOM_API_KEY = "azlqdL59gO4rrlVHkqtjxy0L0SOI3W7l"
 
+def get_coordinates(suburb_name):
+    url = f"https://api.tomtom.com/search/2/geocode/{suburb_name}.json"
+    params = {
+        "key": TOMTOM_API_KEY,
+        "countrySet": "AU",
+        "limit": 1
+    }
+    response = requests.get(url, params=params)
+    data = response.json()
+    
+    if data.get("results"):
+        position = data["results"][0]["position"]
+        return (position["lon"], position["lat"])
+    else:
+        return (None, None)
+    
 # Function to get route details from TomTom API
 def get_route_details(USER_LOCATION, destination, TOMTOM_API_KEY=TOMTOM_API_KEY):
     try:
@@ -48,7 +64,6 @@ def get_route_details(USER_LOCATION, destination, TOMTOM_API_KEY=TOMTOM_API_KEY)
     except requests.exceptions.RequestException as e:
         print(f"Error fetching route for {destination}: {e}")
         return None
-
 # Function to fetch charging station availability
 def get_charging_station_availability(station_id, TOMTOM_API_KEY=TOMTOM_API_KEY):
     try:
@@ -80,7 +95,7 @@ def get_charging_station_availability(station_id, TOMTOM_API_KEY=TOMTOM_API_KEY)
 
 
 # Function to get nearby charging stations from TomTom API
-def get_nearby_stations(USER_LOCATION, NUMBER_OF_RESULTS=NUMBER_OF_RESULTS, TOMTOM_API_KEY=TOMTOM_API_KEY):
+def get_nearby_stations(USER_LOCATION):
     try:
         url = f"https://api.tomtom.com/search/2/nearbySearch/.json"
         params = {
@@ -104,14 +119,14 @@ def get_nearby_stations(USER_LOCATION, NUMBER_OF_RESULTS=NUMBER_OF_RESULTS, TOMT
         return []
 
 # Main logic to find the best available charging station
-def find_station(USER_LOCATION, TOMTOM_API_KEY=TOMTOM_API_KEY, INCLUDE_NAVIGATION=True, RETURN_FULL_JSON=False):
+def find_available_station(USER_LOCATION, TOMTOM_API_KEY=TOMTOM_API_KEY, INCLUDE_NAVIGATION=True, RETURN_FULL_JSON=False):
 
     available_stations = []
     iteration = 0
 
     while iteration < MAX_ITERATIONS:
         # Get nearby stations
-        stations = get_nearby_stations(USER_LOCATION, TOMTOM_API_KEY)
+        stations = get_nearby_stations(USER_LOCATION)
 
         if not stations:
             print("No stations found.")
@@ -122,7 +137,70 @@ def find_station(USER_LOCATION, TOMTOM_API_KEY=TOMTOM_API_KEY, INCLUDE_NAVIGATIO
             station_id = station["id"]
             availability = get_charging_station_availability(station_id, TOMTOM_API_KEY)
             if availability >= 1:
-                route_details = get_route_details(USER_LOCATION, (station["position"]["lon"], station["position"]["lat"]), TOMTOM_API_KEY)
+                route_details = get_route_details(USER_LOCATION, (station["position"]["lon"], station["position"]["lat"]))
+                if route_details and route_details.get("distance_km") and route_details.get("eta_minutes"):
+                    available_stations.append((station, route_details))
+
+        # If we have available stations, break out of the loop
+        if available_stations:
+            break
+
+        iteration += 1
+        # If no stations available, try again with more stations
+        if iteration < MAX_ITERATIONS:
+            global NUMBER_OF_RESULTS
+            NUMBER_OF_RESULTS += 3  # Fetch more stations in the next iteration
+
+    if available_stations:
+        # Sort the available stations by ETA (shortest travel time first)
+        available_stations.sort(key=lambda x: x[1].get("eta_minutes", float('inf')))
+
+
+        # Return all available stations in the same format
+        results = []
+        for station, route in available_stations:
+            lat = station["position"]["lat"]
+            lon = station["position"]["lon"]
+            address = station["address"].get("freeformAddress", "Unknown address")
+            name = station["poi"].get("name")
+            distance = route["distance_km"]
+            eta = route["eta_minutes"]
+            full_json = (station, route["full_json"])
+            result = {
+            "Name": name,
+            "Location": (lon, lat),
+            "Address": address,
+            "Distance": distance,
+            "ETA": eta,
+            **({"Instructions": route["instructions"]} if INCLUDE_NAVIGATION else {}),
+            **({"full_json": full_json} if RETURN_FULL_JSON else {})
+            }
+            results.append(result)
+        return results
+    else:
+        print("No available charging stations found after multiple iterations.")
+
+
+# Main logic to find the best available charging station
+def find_station(USER_LOCATION, TOMTOM_API_KEY=TOMTOM_API_KEY, INCLUDE_NAVIGATION=True, RETURN_FULL_JSON=False):
+
+    available_stations = []
+    iteration = 0
+
+    while iteration < MAX_ITERATIONS:
+        # Get nearby stations
+        stations = get_nearby_stations(USER_LOCATION)
+
+        if not stations:
+            print("No stations found.")
+            break
+
+        # Check availability for each station
+        for station in stations:
+            station_id = station["id"]
+            availability = get_charging_station_availability(station_id, TOMTOM_API_KEY)
+            if availability >= 1:
+                route_details = get_route_details(USER_LOCATION, (station["position"]["lon"], station["position"]["lat"]))
                 if route_details and route_details.get("distance_km") and route_details.get("eta_minutes"):
                     available_stations.append((station, route_details))
 
@@ -143,6 +221,7 @@ def find_station(USER_LOCATION, TOMTOM_API_KEY=TOMTOM_API_KEY, INCLUDE_NAVIGATIO
 
         # Get the top station (the one with the best ETA)
         top_station = available_stations[0]
+        print("top_station: ", top_station)
 
         # get variables to return
         lat = top_station[0]["position"]["lat"]
@@ -166,9 +245,11 @@ def find_station(USER_LOCATION, TOMTOM_API_KEY=TOMTOM_API_KEY, INCLUDE_NAVIGATIO
         print("No available charging stations found after multiple iterations.")
 
 
-def get_route_details(USER_LOCATION, destination, TOMTOM_API_KEY=TOMTOM_API_KEY):
+def get_route_details(USER_LOCATION, destination):
     try:
+        
         url = f"https://api.tomtom.com/routing/1/calculateRoute/{USER_LOCATION[1]},{USER_LOCATION[0]}:{destination[1]},{destination[0]}/json"
+        
         params = {
             "routeType": "fastest",
             "instructionsType": "text",

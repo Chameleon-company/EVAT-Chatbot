@@ -143,16 +143,78 @@ nlu:
 
 - intent: filter_station
   examples: |
-    - show me fast-charging stations
-    - I want the cheapest option
-    - any free charging stations?
-    - do you have Tesla superchargers?
-    - I prefer fast charging
-    - I only want ultra-fast chargers
-    - which ones are free?
-    - show only stations with pricing under $0.30/kWh
-    - I want a station that is free
+    - show me [fast](charging_speed) charging stations
+    - I want the [cheapest](price) option
+    - any [free](price) charging stations?
+    - do you have [Tesla](connector_type) superchargers?
+    - I prefer [fast](charging_speed) charging
+    - I only want [ultra-fast](charging_speed) chargers
+    - which ones are [free](price)?
+    - show only stations with pricing under [$0.30/kWh](price)
+    - I want a station that is [free](price)
+    - find me a [Type 2](connector_type) connector station
+    - I need a [CCS](connector_type) charger above [150](power_level)kW
+    - show available [CHAdeMO](connector_type) stations
+    - where's the nearest [ultra-fast](charging_speed) charging point?
+    - find me a working [Tesla](connector_type) supercharger
+    - I need a [fast](charging_speed) charger that's currently available
+    - show me stations with [Type 2](connector_type) and [CCS](connector_type) connectors
+    - find [affordable](price) [fast](charging_speed) charging stations
+    - are there any [free](price) [ultra-fast](charging_speed) chargers?
+    - show me stations with power above [50](power_level)kW
+    - looking for [rapid](charging_speed) charging options
+    - need a [Type 2](connector_type) charger with [fast](charging_speed) charging
+    - find [CCS](connector_type) stations under [$0.40](price) per kWh
+    - show [CHAdeMO](connector_type) chargers with [150](power_level)kW or more
+- lookup: charging_speed
+  examples: |
+    - slow
+    - fast
+    - rapid
+    - ultra-rapid
+    - 3 kW
+    - 7 kW
+    - 11 kW
+    - 22 kW
+    - 43 kW
+    - 50 kW
+    - 100 kW
+    - 150 kW
+    - 350 kW
+- lookup: connector_type
+  examples: |
+    - CHAdeMO
+    - CCS
+    - CCS2
+    - Type 1
+    - Type 2
+    - Tesla
+    - GB/T
+    - Mennekes
+    - Schuko
+- lookup: price
+  examples: |
+    - free
+    - paid
+    - cheap
+    - expensive
+    - low cost
+    - premium
+- lookup: power_level
+  examples: |
+    - low
+    - medium
+    - high
+    - ultra high
+    - level 1
+    - level 2
+    - level 3
+    - 50 kW
+    - 100 kW
+    - 150 kW
+    - 350 kW
 
+    
 - intent: traffic_info
   examples: |
     - how's the traffic near the station?
