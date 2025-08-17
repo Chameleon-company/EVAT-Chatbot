@@ -1,0 +1,170 @@
+# Cleaned up stories: replaced old actions with action_handle_charging_request and updated intent names
+
+version: "3.1"
+
+stories:
+
+# Test the universal action handler with different goals
+- story: universal find station
+  steps:
+  - intent: find_charging_station
+  - action: action_handle_charging_request
+
+- story: universal urgent help
+  steps:
+  - intent: urgent_charging
+  - action: action_handle_charging_request
+
+- story: universal get information
+  steps:
+  - intent: charging_information
+  - action: action_handle_charging_request
+
+- story: universal troubleshoot
+  steps:
+  - intent: troubleshooting
+  - action: action_handle_charging_request
+
+- story: universal navigate
+  steps:
+  - intent: specific_location
+  - action: action_handle_charging_request
+
+- story: universal filter options
+  steps:
+  - intent: filter_preferences
+  - action: action_handle_charging_request
+
+# Interactive learning stories with natural language
+- story: natural emergency request
+  steps:
+  - intent: urgent_charging
+    user: |-
+      my battery is dying need help asap
+  - action: action_handle_charging_request
+  - intent: affirm
+    user: |-
+      yes please take me there
+  - action: action_handle_charging_request
+
+- story: natural information request
+  steps:
+  - intent: charging_information
+    user: |-
+      how much does it cost to charge here
+  - action: action_handle_charging_request
+  - intent: affirm
+    user: |-
+      yes show me cheaper options
+  - action: action_handle_charging_request
+
+- story: natural troubleshooting
+  steps:
+  - intent: troubleshooting
+    user: |-
+      i'm having trouble connecting to the charger
+  - action: action_handle_charging_request
+  - intent: affirm
+    user: |-
+      yes connect me to support
+  - action: action_handle_charging_request
+
+# Original stories for backward compatibility
+- story: emergency charging path
+  steps:
+  - intent: urgent_charging
+  - action: action_handle_charging_request
+  - intent: affirm
+  - action: Action_To_Charging_Station
+
+- story: emergency charging with rejection
+  steps:
+  - intent: urgent_charging
+  - action: action_handle_charging_request
+  - intent: deny
+  - action: Action_Get_Nearest_Station
+
+- story: check charging costs
+  steps:
+  - intent: charging_information
+  - action: action_handle_charging_request
+  - intent: affirm
+  - action: action_handle_charging_request
+
+- story: check station availability
+  steps:
+  - intent: station_details
+  - action: action_handle_charging_request
+  - intent: affirm
+  - action: Action_Get_Nearest_Station
+
+- story: check charging speed
+  steps:
+  - intent: charging_information
+  - action: action_handle_charging_request
+  - intent: charging_information
+  - action: action_handle_charging_request
+
+- story: check compatibility with car details
+  steps:
+  - intent: compatibility_check
+  - action: action_handle_charging_request
+  - intent: compatibility_check
+    entities:
+    - car_brand: "Tesla"
+    - car_model: "Model 3"
+  - action: action_handle_charging_request
+
+- story: check station amenities
+  steps:
+  - intent: station_details
+  - action: action_handle_charging_request
+  - intent: affirm
+  - action: action_handle_charging_request
+
+- story: handle charging issues - payment
+  steps:
+  - intent: troubleshooting
+  - action: action_handle_charging_request
+  - intent: affirm
+  - action: action_handle_charging_request
+
+- story: handle charging issues - connection
+  steps:
+  - intent: troubleshooting
+  - action: action_handle_charging_request
+  - intent: deny
+  - action: action_handle_charging_request
+
+# Interactive learning stories
+- story: interactive emergency charging
+  steps:
+  - intent: urgent_charging
+    user: |-
+      my battery is dying need help asap
+  - action: action_handle_charging_request
+  - intent: affirm
+    user: |-
+      yes please take me there
+  - action: Action_To_Charging_Station
+
+- story: interactive charging cost check
+  steps:
+  - intent: charging_information
+    user: |-
+      how much does it cost to charge here
+  - action: action_handle_charging_request
+  - intent: affirm
+    user: |-
+      yes show me cheaper options
+  - action: action_handle_charging_request
+
+- story: interactive compatibility check
+  steps:
+  - intent: compatibility_check
+    user: |-
+      will this work with my Tesla Model 3
+    entities:
+    - car_brand: Tesla
+    - car_model: Model 3
+  - action: action_handle_charging_request 

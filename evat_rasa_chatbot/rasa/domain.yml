@@ -1,0 +1,171 @@
+version: "3.1"
+
+intents:
+  - greet
+  - menu_selection
+  - route_planning
+  - route_info
+  - emergency_charging
+  - emergency_location_input
+  - preference_charging
+  - preference_selection
+  - preference_location_input
+  - route_station_selection
+  - emergency_station_selection
+  - preference_station_selection
+  - action_selection
+  - follow_up
+  - goodbye
+
+entities:
+  - menu_option
+  - start_location
+  - end_location
+  - current_location
+  - battery_level
+  - preference_type
+  - route_station_number
+  - emergency_station_number
+  - preference_station_number
+  - action_type
+  - follow_up_type
+  - station_name
+
+slots:
+  menu_option:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: menu_option
+
+  start_location:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: start_location
+
+  end_location:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: end_location
+
+  current_location:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: current_location
+
+  battery_level:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: battery_level
+
+  preference_type:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: preference_type
+
+  route_station_number:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: route_station_number
+
+  emergency_station_number:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: emergency_station_number
+
+  preference_station_number:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: preference_station_number
+
+  action_type:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: action_type
+
+  conversation_context:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  follow_up_type:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: follow_up_type
+
+responses:
+  utter_greet:
+    - text: "Hello! Welcome to Melbourne EV Charging Assistant! ⚡\n\nI can help you with:\n• **Route Planning** - Plan charging stops for your journey\n• **Emergency Charging** - Find nearest stations when battery is low\n• **Charging Preferences** - Find stations by your preferences (fast, cheap, etc.)\n\n**🎯 Each session has a clear goal and endpoint.**\nWhat would you like to do?"
+
+  utter_goodbye:
+    - text: "Goodbye! Have a great journey! 🚗⚡"
+
+  utter_ask_route_locations:
+    - text: "Great! Let's plan your charging route. Where are you traveling from and to?"
+
+  utter_ask_emergency_details:
+    - text: "Emergency charging assistance! 🚨 Where are you currently located and what's your battery level?"
+
+  utter_ask_preference_type:
+    - text: "Let me help you find stations based on your preferences! What's most important to you?\n\n1. **Cheapest** - Lowest cost per kWh 💰\n2. **Fastest** - Ultra-fast charging speeds ⚡\n3. **Closest** - Nearest to your location 📍\n4. **Premium** - Best facilities & amenities 🌟\n\nWhat's your preference?"
+
+  utter_ask_location_for_preference:
+    - text: "Great choice for {preference_type} charging! Where are you located?"
+
+  utter_ask_station_selection:
+    - text: "Which station would you like to know more about?"
+
+  utter_ask_action_choice:
+    - text: "Would you like:\n1. Get directions to this station\n2. Compare with other options\n3. Check current availability"
+
+  utter_route_planning_results:
+    - text: "Perfect! I found charging stations along your {start_location} to {end_location} route. Which station would you like to know more about?"
+
+  utter_emergency_results:
+    - text: "Don't worry! I found the closest charging stations to {current_location}. All have available charging points right now. Which one?"
+
+  utter_preference_results:
+    - text: "Here are the most {preference_type} charging options near {current_location}. Which interests you?"
+
+  utter_station_details:
+    - text: "**{station_name}:**\n📍 {address}\n⚡ {power} charging ({points} points available)\n💰 {cost} - Estimated cost: {estimated_cost}\n🕐 Charging time: {charging_time}\n🗺️ Total trip time: {trip_time} (including charging)\n\nWould you like:\n1. Get directions to this station\n2. Compare with other options\n3. Check current availability"
+
+actions:
+  - action_handle_menu_selection
+  - action_handle_route_info
+  - action_handle_route_station_selection
+  - action_handle_emergency_station_selection
+  - action_handle_preference_station_selection
+  - action_handle_action_choice
+  - action_handle_follow_up
+  - action_handle_emergency_location_input
+  - action_handle_emergency_charging
+  - action_handle_preference_charging
+  - action_default_fallback
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
+
