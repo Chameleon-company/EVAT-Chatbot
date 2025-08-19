@@ -2,3 +2,4 @@ rasa/rasa_env/
 rasa/models/
 __pycache__/
 .DS_Store
+rasa/.rasa/
