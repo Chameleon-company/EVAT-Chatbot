@@ -2,93 +2,213 @@ version: "3.1"
 
 intents:
   - greet
+  - menu_selection
+  - route_planning
+  - route_info
+  - emergency_charging
+  - emergency_location_input
+  - emergency_connector_input
+  - preference_charging
+  - preference_selection
+  - preference_location_input
+  - route_station_selection
+  - emergency_station_selection
+  - preference_station_selection
+  - action_selection
+  - follow_up
   - goodbye
-  - affirm
-  - deny
-  - mood_great
-  - mood_unhappy
-  - bot_challenge
-  - Nearest_Charging_Station
-  - To_Charging_Station
-  - How_Long_To_Charge
-  - Distence_I_Can_Go
-  - filter_station
-  - traffic_info
-  - out_of_scope
   - nlu_fallback
-  - charger_info
+  # Enhanced preference filtering intent
+  - filter_by_preferences
+  # Enhanced charger information intent
+  - get_charger_info
+  # Traffic information intent
+  - get_traffic_info
+  # Advanced directions intent
+  - get_advanced_directions
 
-entities: 
-  - place
+entities:
+  - menu_option
+  - start_location
+  - end_location
+  - current_location
+  - preference_type
+  - action_type
+  - follow_up_type
+  - station_name
+  # Enhanced preference entities from PR-1
+  - charging_speed
+  - connector_type
+  - price
+  - power_level
+
 slots:
-  location:
-      type: text
-      influence_conversation: true
-      mappings:
-        - type: from_entity
-          entity: place
-  Charger Name:
+  menu_option:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: menu_option
+
+  start_location:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: start_location
+
+  end_location:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: end_location
+
+  current_location:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: current_location
+
+  battery_level:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: battery_level
+
+  preference_type:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: preference_type
+
+  charging_preference:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+
+  action_type:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: action_type
+
+  selected_station:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  displayed_stations:
+    type: list
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  conversation_context:
+    type: categorical
+    influence_conversation: true
+    values:
+      - route_planning
+      - emergency_charging
+      - preference_charging
+      - route_planning_results
+      - emergency_results
+      - preference_results
+      - station_details
+      - getting_directions
+      - comparing_stations
+      - checking_availability
+      - ended
+      - route_station_selection
+      - emergency_station_selection
+      - preference_station_selection
+    mappings:
+      - type: custom
+
+  follow_up_type:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: follow_up_type
+
+  # Enhanced preference slots from PR-1
+  charging_speed:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: charging_speed
+
+  connector_type:
+    type: list
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: connector_type
+
+  power_level:
+    type: float
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: power_level
+
+  price:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: price
+
+  filter_preferences:
     type: text
     influence_conversation: false
     mappings:
       - type: custom
 
-
-
-  filter_preferences:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_text
-
-  traffic_aware:
-    type: bool
-    influence_conversation: true
-    mappings:
-      - type: from_intent
-        intent: traffic_info
-        value: true
-
 responses:
   utter_greet:
-  - text: "Hey! How are you?"
-
-  utter_cheer_up:
-  - text: "Here is something to cheer you up:"
-    image: "https://i.imgur.com/nGF1K8f.jpg"
-
-  utter_did_that_help:
-  - text: "Did that help you?"
-
-  utter_happy:
-  - text: "Great, carry on!"
+    - text: "Hello! Welcome to Melbourne EV Charging Assistant! ⚡\n\nPlease select an option:\n\n1. 🗺️ **Route Planning** - Plan charging stops for your journey\n2. 🚨 **Emergency Charging** - Find nearest stations when battery is low\n3. ⚡ **Charging Preferences** - Find stations by your preferences\n\n**🎯 Type 1, 2, or 3 to continue!**"
 
   utter_goodbye:
-  - text: "Bye"
+    - text: "Goodbye! Have a great journey! 🚗⚡"
 
-  utter_iamabot:
-  - text: "I am a bot, powered by Rasa."
-
-  utter_default:
-  - text: "Sorry, I didn't get that. Can you rephrase?"
-
-  utter_great_choice:
-  - text: "Awesome, that station fits your preferences."
-
-  utter_no_traffic_info:
-  - text: "I couldn't fetch traffic info at the moment. Try again soon."
 
 
 actions:
-  - Action_Get_Nearest_Station
-  - Action_To_Charging_Station
-  - Action_How_Long_To_Charge
-  - Action_Distence_I_Can_Go
-  - Action_Filter_Stations
-  - Action_Traffic_Info
-  - action_default_fallback
-  - Action_charger_info
-  - Get_Directions_action
+  - action_handle_any_input
+  - action_handle_initial_input
+  - action_handle_menu_selection
+  - action_handle_route_input
+  - action_handle_emergency_input
+  - action_handle_preference_input
+  - action_handle_preference_location_input
+  - action_handle_route_station_selection
+  - action_handle_emergency_station_selection
+  - action_handle_preference_station_selection
+  - action_handle_action_choice
+  - action_handle_follow_up
+  - action_handle_emergency_location_input
+  - action_handle_emergency_charging
+  - action_handle_preference_charging
+  # Enhanced preference filtering action
+  - action_enhanced_preference_filtering
+  # Enhanced charger information action
+  - action_enhanced_charger_info
+  # Traffic information action
+  - action_traffic_info
+  # Advanced directions action
+  - action_advanced_directions
+  # Route info action
+  - action_handle_route_info
 
 session_config:
   session_expiration_time: 60

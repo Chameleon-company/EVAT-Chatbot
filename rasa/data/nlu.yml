@@ -3,182 +3,561 @@ version: "3.1"
 nlu:
 - intent: greet
   examples: |
-    - hey
-    - hello
     - hi
-    - hello there
+    - hello
+    - hey
+    - hey there
     - good morning
     - good evening
-    - moin
-    - hey there
-    - let's go
+    - good afternoon
+    - hi there
+    - hello there
     - hey dude
     - goodmorning
     - goodevening
-    - good afternoon
+    - hi please
+    - hello please
+    - hey please
+    - hey there please
+    - good morning please
+    - good evening please
+    - good afternoon please
+    - hi there please
+    - hello there please
+    - hey dude please
+    - goodmorning please
+    - goodevening please
+    - hey
+    - hey there
+    - hey dude
+    - hey please
+    - hey there please
+    - hey dude please
+    - start
+ 
+
+- intent: menu_selection
+  examples: |
+    - 1
+    - 2
+    - 3
+
 
 - intent: goodbye
   examples: |
-    - cu
-    - good by
-    - cee you later
-    - good night
     - bye
-    - goodbye
-    - have a nice day
-    - see you around
-    - bye bye
-    - see you later
+    - pp
+    - gud bye
 
-- intent: affirm
-  examples: |
-    - yes
-    - y
-    - indeed
-    - of course
-    - that sounds good
-    - correct
 
-- intent: deny
-  examples: |
-    - no
-    - n
-    - never
-    - I don't think so
-    - don't like that
-    - no way
-    - not really
 
-- intent: mood_great
+- intent: route_planning
   examples: |
-    - perfect
-    - great
-    - amazing
-    - feeling like a king
-    - wonderful
-    - I am feeling very good
-    - I am great
-    - I am amazing
-    - I am going to save the world
-    - super stoked
-    - extremely good
-    - so so perfect
-    - so good
-    - so perfect
+    - i need to plan a route
+    - plan route to [Geelong](end_location)
+    - driving to [Brighton](end_location)
+    - need charging stops for my journey
+    - planning a trip to [South Yarra](end_location)
+    - plan my journey
+    - find charging stops along route
+    - need to plan charging for trip
+    - route to [Geelong](end_location)
+    - journey planning
+    - trip planning
 
-- intent: mood_unhappy
+- intent: emergency_charging
   examples: |
-    - my day was horrible
-    - I am sad
-    - I don't feel very well
-    - I am disappointed
-    - super sad
-    - I'm so sad
-    - sad
-    - very sad
-    - unhappy
-    - not good
-    - not very good
-    - extremly sad
-    - so saad
-    - so sad
+    - battery low
+    - need charging now
+    - emergency
+    - urgent charging needed
+    - battery dying
+    - low battery
+    - critical battery level
+    - need charger immediately
+    - battery almost dead
+    - emergency charging
+    - urgent help
+    - need charger now
+    - emergency charging please
+    - i need emergency charging
+    - help me with emergency charging
+    - show me emergency charging
+    - emergency charging option
+    - i want emergency charging
+    - emergency charging help
+    - urgent charging
+    - battery emergency
+    - critical charging
+    - immediate charging
 
-- intent: bot_challenge
+- intent: emergency_location_input
   examples: |
-    - are you a bot?
-    - are you a human?
-    - am I talking to a bot?
-    - am I talking to a human?
+    - [in Frankston](current_location)
+    - [in Richmond](current_location)
+    - [in Melbourne](current_location)
+    - [in Carlton](current_location)
+    - [in South Yarra](current_location)
+    - [Brighton](current_location)
+    - [Geelong](current_location)
+    - [Dandenong](current_location)
+    - [Collingwood](current_location)
+    - [St Kilda](current_location)
+    - [Brunswick](current_location)
+    - [Docklands](current_location)
+    - [Footscray](current_location)
 
-- intent: Nearest_Charging_Station 
+- intent: emergency_connector_input
   examples: |
-    - take me to the nearest station 
-    - where is the closest charging station
-    - i need the closest station
-    - i need a charging station
-    - take me to the closest charging station
-    - im low on power i need a charging station
+    - Tesla
+    - tesla
+    - Model 3
+    - model 3
+    - Model Y
+    - model y
+    - BYD Atto 3
+    - Hyundai Ioniq
+    - Kia EV6
+    - MG ZS EV
+    - Nissan Leaf
+    - Type 2
+    - type 2
+    - type2
+    - CCS
+    - CCS2
+    - CHAdeMO
+    - Mennekes
+    - I have a Tesla
+    - my car is a Model 3
+    - connector type is Type 2
+    - I need a CCS charger
+    - chademo connector
 
-- intent: To_Charging_Station 
+
+- intent: preference_charging
   examples: |
-    - take me to the [glenwaverly](place) station 
-    - where is the charging station in [vermount south](place)?
-    - i need the [ferntree gully](place) station
-    - i need a charging station from [boxhill](place)
-    - take me to the [mount waverly](place) charging station
-    - im low on power i need a charging station in[clayton](place)
-    - take me to the [mooroolbark](place) station
-    - where is the charging station in [sassafras](place)?
-    - i need a charging station from [upwey](place)
-    - get me to the [st kilda](place) charging station
-    - take me to the [brighton](place) station
-    - where is the charging station in [moorabbin](place)?
-    - i need a charging station from [beaconsfield](place)
-    - get me to the [sandgurst](place) charging station
-    - take me to the [skye](place) station
-    - where is the charging station in [devon meadows](place)?
-    - i need a charging station from [mornington](place)
-    - get me to the [dromana](place) charging station
-    - take me to the [drysdale](place) charging station
-    - take me to the [buckly](place) charging station
-    - take me to the [breamlea](place) charging station
-    - take me to the [werribee](place) charging station
-- lookup: place
-   data/city_names.txt
+    - cheapest charging
+    - find fast chargers
+    - premium charging
+    - fastest charging
+    - most affordable
+    - best facilities
+    - luxury charging
+    - budget charging
+    - ultra fast charging
     
+    - cheapest option
+    - fastest option
+    - premium option
+    
+    - show me [cheapest](preference_type) charging
+    - find [fastest](preference_type) chargers
+    
+    - [premium](preference_type) charging
+    - preference charging
+    - charging preferences
+    - help with preferences
+    - preference charging help
 
-- intent: How_Long_To_Charge
+
+- intent: preference_selection
   examples: |
-    - how long would it take to charge an electric vehicles?
-    - what is the average time to charge my car?
-    - what is the average time to charge an electric vehicle?
-    - how long will it take to charge my car?
+    - [cheapest](preference_type)
+    - [fastest](preference_type)
+    
+    - [premium](preference_type)
+    - i prefer [cheapest](preference_type)
+    - show [fastest](preference_type)
+    
+    - let's go with [premium](preference_type)
+    - choose [cheapest](preference_type)
+    - select [fastest](preference_type)
+    
+    - pick [premium](preference_type)
+    - go with [cheapest](preference_type)
+    - go with [fastest](preference_type)
+    
+    - go with [premium](preference_type)
 
-- intent: Distence_I_Can_Go
+- intent: preference_location_input
   examples: |
-    - how long will i travel on a full charge
-    - whats the travel distence on an electric vehicle
-    - what is the expected distence this car will go 
-    - what is the expected travel distence i can go in my electric vehicle
+    - i'm in [Carlton](current_location)
+    - my location is [Melbourne](current_location)
+    - i'm at [Richmond](current_location)
+    - [Dandenong](current_location)
+    - near [South Yarra](current_location)
+    - location: [Geelong](current_location)
+    - currently in [Frankston](current_location)
+    - around [St Kilda](current_location)
+    - [Brunswick](current_location) is my location
+    - i am located in [Docklands](current_location)
+    - in [Melbourne](current_location)
+    - in [Carlton](current_location)
 
-- intent: filter_station
+- intent: route_station_selection
   examples: |
-    - show me fast-charging stations
-    - I want the cheapest option
-    - any free charging stations?
-    - do you have Tesla superchargers?
-    - I prefer fast charging
-    - I only want ultra-fast chargers
-    - which ones are free?
-    - show only stations with pricing under $0.30/kWh
-    - I want a station that is free
+    - let's go with [station_name]
+    - i'll go with [station_name]
+    - i will go with [station_name]
+    - i choose [station_name]
+    - i select [station_name]
+    - show me [station_name]
+    - tell me about [station_name]
+    - give me details for [station_name]
+    - i want [station_name]
+    - i'd like [station_name]
+    - i would like [station_name]
+    - [station_name] please
+    - [station_name] station
+    - the [station_name] station
+    - select [station_name]
+    - choose [station_name]
+    - pick [station_name]
+    - go with [station_name]
+    - i'll take [station_name]
+    - i want to go to [station_name]
+    - i'd like to go to [station_name]
+    - i go with [station_name]
+    - i will go with [station_name]
+    - i'll go with [station_name]
+    - i would like to go to [station_name]
+    - can you show me [station_name]
+    - details for [station_name]
+    - information about [station_name]
+    - [station_name] details
+    - [station_name] information
+    - show me [Malvern Central](station_name)
+    - tell me about [Malvern Central](station_name)
+    - [Malvern Central](station_name)
+    - show me [Lynbrook Village](station_name)
+    - tell me about [Lynbrook Village](station_name)
+    - [Lynbrook Village](station_name)
+    - show me [RMIT - City Campus](station_name)
+    - [RMIT - City Campus](station_name)
+    - show me [ENGIE - Victoria Gardens](station_name)
+    - [ENGIE - Victoria Gardens](station_name)
+    - show me [Swinburne University - TC Building](station_name)
+    - [Swinburne University - TC Building](station_name)
+    - show me [Camberwell Supercharger](station_name)
+    - [Camberwell Supercharger](station_name)
+    - show me [Chadstone Shopping Centre](station_name)
+    - [Chadstone Shopping Centre](station_name)
+    - show me [Tesla Supercharger South Melbourne](station_name)
+    - [Tesla Supercharger South Melbourne](station_name)
+    - show me [High Street](station_name)
+    - [High Street](station_name)
+    - show me [Evie Portland](station_name)
+    - [Evie Portland](station_name)
+    - show me [North Bellarine Aquatic Centre](station_name)
+    - [North Bellarine Aquatic Centre](station_name)
 
-- intent: traffic_info
+# Enhanced preference filtering intent from PR-1
+- intent: filter_by_preferences
   examples: |
-    - how's the traffic near the station?
-    - suggest the station with least traffic
-    - avoid heavy traffic routes
-    - recommend a low-traffic station
-    - which station is fastest to reach now?
-    - where's the best option considering traffic?
+    - show me [fast](charging_speed) charging stations
+    - I want the [cheapest](price) option
+    - any [free](price) charging stations?
+    - do you have [Tesla](connector_type) superchargers?
+    - I prefer [fast](charging_speed) charging
+    - I only want [ultra-fast](charging_speed) chargers
+    - which ones are [free](price)?
+    - show only stations with pricing under [$0.30/kWh](price)
+    - I want a station that is [free](price)
+    - find me a [Type 2](connector_type) connector station
+    - I need a [CCS](connector_type) charger above [150](power_level)kW
+    - show available [CHAdeMO](connector_type) stations
+    - where's the nearest [ultra-fast](charging_speed) charging point?
+    - find me a working [Tesla](connector_type) supercharger
+    - I need a [fast](charging_speed) charger that's currently available
+    - show me stations with [Type 2](connector_type) and [CCS](connector_type) connectors
+    - find [affordable](price) [fast](charging_speed) charging stations
+    - are there any [free](price) [ultra-fast](charging_speed) chargers?
+    - show me stations with power above [50](power_level)kW
+    - looking for [rapid](charging_speed) charging options
+    - need a [Type 2](connector_type) charger with [fast](charging_speed) charging
+    - find [CCS](connector_type) stations under [$0.40](price) per kWh
+    - show [CHAdeMO](connector_type) chargers with [150](power_level)kW or more
+    - filter by [fast](charging_speed) charging
+    - show [Type 2](connector_type) stations only
+    - find [free](price) charging options
+    - I need [ultra-fast](charging_speed) charging
+    - show me [CCS](connector_type) compatible stations
+    - find [affordable](price) [Type 2](connector_type) chargers
 
-- intent: out_of_scope
+# Enhanced charger information intent
+- intent: get_charger_info
   examples: |
-    - can you play music?
-    - what's the weather today?
-    - tell me a joke
-    - who won the game?
+    - tell me about this charging station
+    - what are the details of this station
+    - show me station information
+    - give me charger details
+    - what do you know about this station
+    - station information please
+    - charger details
+    - tell me more about this station
+    - what are the specs of this charger
+    - show station specs
+    - charger specifications
+    - station details
+    - information about this charger
+    - what's the power output of this station
+    - how much does this charger cost
+    - how many charging points does this station have
+    - what connection types are available
+    - station power output
+    - charging cost information
+    - number of charging points
 
-- intent: charger_info
+# Traffic information intent
+- intent: get_traffic_info
   examples: |
-    - what is the information about these chargers
-    - what type of information does this charger have
-    - will my charger surpport my car.
-    - how much will this charger cost.
-    - what is the power output of the charger. 
-    - i would like info about the charging station     
-    - no i would like information about this charging station  
+    - how's the traffic
+    - traffic conditions
+    - is there traffic
+    - traffic information
+    - traffic update
+    - traffic status
+    - how's the traffic to the station
+    - traffic conditions on the way
+    - is there traffic on my route
+    - traffic to charging station
+    - route traffic
+    - traffic on the way
+    - traffic to destination
+    - traffic conditions to station
+    - how long will traffic add to my journey
+    - traffic delay estimate
+    - alternative routes due to traffic
+    - traffic-aware routing
+    - best route considering traffic
+    - traffic optimization
+    - traffic report
+    - traffic news
+    - traffic alerts
+    - traffic warnings
+
+# Advanced directions intent
+- intent: get_advanced_directions
+  examples: |
+    - give me directions
+    - how do I get there
+    - show me the route
+    - directions to the station
+    - route to charging station
+    - how to get to the station
+    - navigation instructions
+    - driving directions
+    - route guidance
+    - turn by turn directions
+    - step by step directions
+    - driving route
+    - navigation route
+    - directions from my location
+    - route from here to there
+    - how to drive there
+    - driving instructions
+    - navigation guidance
+    - driving route to station
+    - get directions
+    - show directions
+    - route guidance please
+
+- intent: emergency_station_selection
+  examples: |
+    - emergency station [station_name]
+    - urgent charging at [station_name]
+    - emergency stop at [station_name]
+    - critical charging [station_name]
+    - battery low need [station_name]
+    - urgent need [station_name]
+    - emergency [station_name] please
+    - critical [station_name] station
+    - emergency charging [station_name]
+    - urgent [station_name] please
+    - battery critical [station_name]
+    - need [station_name] now
+    - emergency stop [station_name]
+    - urgent charging [station_name]
+    - critical need [station_name]
+
+- intent: preference_station_selection
+  examples: |
+    - preference match [station_name]
+    - preferred station [station_name]
+    - best match [station_name]
+    - ideal station [station_name]
+    - perfect fit [station_name]
+    - matches preferences [station_name]
+    - preferred choice [station_name]
+    - best option [station_name]
+    - ideal choice [station_name]
+    - perfect match [station_name]
+    - preference fit [station_name]
+    - best preference [station_name]
+    - ideal preference [station_name]
+    - perfect preference [station_name]
+    - preference choice [station_name]
+
+- intent: action_selection
+  examples: |
+    - compare options
+    - check availability
+    - show alternatives
+    - compare with others
+    - check if available
+    - show other options
+    - compare stations
+    - availability check
+    - show alternatives
+    - navigate
+    - route
+    - drive
+    - go to
+    - compare
+    - comparison
+    - alternative
+    - other
+    - options
+    - available
+    - availability
+    - status
+    - check
+    - open
+    - compare options please
+    - check availability please
+    - show alternatives please
+    - give me directions please
+    - compare with others please
+    - check if available please
+    - show other options please
+    - directions please
+    - compare stations please
+    - availability check please
+    - show alternatives please
+
+- intent: route_info
+  examples: |
+    - from [Richmond](start_location) to [Dandenong](end_location)
+    - [Richmond](start_location) to [Dandenong](end_location)
+    - traveling from [Richmond](start_location) to [Dandenong](end_location)
+    - driving from [Richmond](start_location) to [Dandenong](end_location)
+    - i'm going from [Richmond](start_location) to [Dandenong](end_location)
+    - need route from [Richmond](start_location) to [Dandenong](end_location)
+    - driving to [South Yarra](end_location)
+    - from [Richmond](start_location) to [Frankston](end_location)
+    - [Richmond](start_location) to [Frankston](end_location)
+    - from [Carlton](start_location) to [Geelong](end_location)
+    - [Carlton](start_location) to [Geelong](end_location)
+    - from [Melbourne](start_location) to [Bendigo](end_location)
+    - [Melbourne](start_location) to [Bendigo](end_location)
+    - from [South Yarra](start_location) to [St Kilda](end_location)
+    - [South Yarra](start_location) to [St Kilda](end_location)
+    - from [Brunswick](start_location) to [Northcote](end_location)
+    - [Brunswick](start_location) to [Northcote](end_location)
+    - from [Footscray](start_location) to [Williamstown](end_location)
+    - [Footscray](start_location) to [Williamstown](end_location)
+    - from [Preston](start_location) to [Reservoir](end_location)
+    - [Preston](start_location) to [Reservoir](end_location)
+
+- intent: follow_up
+  examples: |
+    - alternative routes
+    - other routes
+    - different way
+    - save location
+    - bookmark
+    - favorite
+    - go back
+    - return
+    - previous
+    - new route
+    - plan route
+    - different route
+    - start navigation
+    - take route
+    - alternative route
+    - other route
+    - different route
+    - save
+    - save route
+    - bookmark location
+    - favorite location
+    - go back to stations
+    - return to stations
+    - previous stations
+    - new journey
+    - plan new route
+    - different journey
+    - start navigation please
+    - take route please
+    - navigate please
+    - done please
+    - complete please
+    - finish please
+    - end please
 
 
+- lookup: charging_speed
+  examples: |
+    - slow
+    - fast
+    - rapid
+    - ultra-rapid
+    - 3 kW
+    - 7 kW
+    - 11 kW
+    - 22 kW
+    - 43 kW
+    - 50 kW
+    - 100 kW
+    - 150 kW
+    - 350 kW
 
-  
+- lookup: connector_type
+  examples: |
+    - CHAdeMO
+    - CCS
+    - CCS2
+    - Type 1
+    - Type 2
+    - Tesla
+    - GB/T
+    - Mennekes
+    - Schuko
+
+- lookup: price
+  examples: |
+    - free
+    - paid
+    - cheap
+    - expensive
+    - low cost
+    - premium
+
+- lookup: power_level
+  examples: |
+    - low
+    - medium
+    - high
+    - ultra high
+    - level 1
+    - level 2
+    - level 3
+    - 50 kW
+    - 100 kW
+    - 150 kW
+    - 350 kW
+
+- lookup: station_name
+  examples: |
+    - Malvern Central
+    - Lynbrook Village
+    - RMIT - City Campus
+    - Camberwell Supercharger
+    - Chadstone Shopping Centre
+    - Tesla Supercharger South Melbourne
+    - ENGIE - Victoria Gardens
+    - Swinburne University - TC Building
+    - High Street
+    - Evie Portland
+    - North Bellarine Aquatic Centre
