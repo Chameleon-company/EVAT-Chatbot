@@ -594,6 +594,19 @@ class ChargingStationDataService:
             pass
         return "Cost calculation not available"
 
+    def _get_station_availability(self, lat: float, lon: float):
+        """
+        Thin wrapper to get EV charging station availability.
+        Returns: ("Yes" | "No" | "Unknown", updated_at)
+        """
+        result = api_manager.get_charging_availability(lat, lon)
+
+        if result["available"] is True:
+            return "Yes", result["updated_at"], result.get("data", {})
+        elif result["available"] is False:
+            return "No", result["updated_at"], result.get("data", {})
+        else:
+            return "Unknown", result["updated_at"], result.get("data", {})
 
 # Global instance
 data_service = ChargingStationDataService()

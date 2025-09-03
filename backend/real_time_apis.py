@@ -3,8 +3,9 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
+import datetime
 
-
+_station_cache: Dict[str, Dict[str, Any]] = {}
 try:
     from dotenv import load_dotenv
 
@@ -184,7 +185,78 @@ class ApiManager:
         except Exception:
             return None
         return None
+    
+    def get_charging_availability(self, lat: float, lon: float) -> Dict[str, Any]:
+        """
+        Get basic availability of a charging station near given coordinates.
 
+        Returns:
+            {
+                "available": True/False/None,
+                "updated_at": ISO timestamp or None,
+                "data": full JSON from TomTom or error info
+            }
+        """
+        station_key = f"{lat:.4f},{lon:.4f}"
+        api_key = "azlqdL59gO4rrlVHkqtjxy0L0SOI3W7l"
+        
+        # --- Cache check ---
+        if station_key in _station_cache:
+            if _station_cache[station_key]["expiry"] > datetime.datetime.utcnow():
+                return _station_cache[station_key]["data"]
+
+        try:
+            # Step 1: Find nearest EV charging station (categorySet=7309)
+            nearby_url = (
+                f"https://api.tomtom.com/search/2/nearbySearch/.json?"
+                f"lat={lat}&lon={lon}&key={api_key}&radius=500&limit=1&categorySet=7309"
+            )
+            resp1 = requests.get(nearby_url, timeout=5)
+            resp1.raise_for_status()
+            nearby_data = resp1.json()
+
+            if not nearby_data.get("results"):
+                return {"available": None, "updated_at": None, "data": "No station found"}
+
+            station_id = nearby_data["results"][0]["id"]
+            # print("Nearest stationId:", station_id)
+
+            # Step 2: Get real-time availability
+            avail_url = "https://api.tomtom.com/search/2/chargingAvailability.json"
+            params = {
+                "key": api_key,
+                "chargingAvailability": station_id,
+                "minPowerKW": 1,
+                "maxPowerKW": 100,
+            }
+            resp2 = requests.get(avail_url, params=params, timeout=5)
+            resp2.raise_for_status()
+            avail_data = resp2.json()
+            # print("Availability response:", avail_data)
+
+            # Simplified peek
+            available = None
+            updated_at = None
+
+            ca = avail_data.get("chargingAvailability", {})
+            connectors = avail_data.get("connectors", [])
+
+            if connectors:
+                free_count = sum(c.get("available", 0) for c in connectors)
+                available = free_count > 0
+                updated_at = datetime.datetime.utcnow().isoformat()
+
+            result = {"available": available, "updated_at": updated_at, "data": avail_data}
+
+            # --- Cache store (10 min TTL) ---
+            _station_cache[station_key] = {
+                "data": result,
+                "expiry": datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
+            }
+            return result
+
+        except Exception as e:
+            return {"available": None, "updated_at": None, "data": f"Exception: {e}"}
 
 # Global instance as expected by imports in Rasa actions
 api_manager = ApiManager()
