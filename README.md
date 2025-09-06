@@ -67,8 +67,8 @@ python -m http.server 8080
 ```
 
 ### Interact (3 flows)
-- Route planning: `1` → `from Carlton to Geelong` → `/get_directions` → `/get_traffic_info`
-- Emergency charging: `2` → `Richmond` → type a station name → `get directions`
+- Route planning: `1` → `from Carlton to Geelong` → `get_directions pls` → `get_traffic_info`
+- Emergency charging: `2` → `Richmond` → type a station name → `get directions pls`
 - Preferences: `3` → `fastest` (or `cheapest`/`premium`) → `Melbourne` → type a station name
 
 ### How it works
