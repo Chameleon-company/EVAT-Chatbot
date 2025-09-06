@@ -1969,12 +1969,15 @@ class ActionHandleActionChoice(Action):
         if choice == "compare":
             return self._show_comparison(dispatcher, tracker)
         elif choice == "availability":
-            dispatcher.utter_message(
-                text=(
-                    "❌ Real-time availability is unavailable right now. "
-                    "This feature will be added later."
-                )
-            )
+            # dispatcher.utter_message(
+            #     text=( 
+            #         "❌ Real-time availability is unavailable right now. "
+            #         f"This feature will be added later. {message}"
+            #     )
+            # )
+            self._show_availabilty(dispatcher, tracker)
+            
+            
             return [SlotSet("conversation_context", ConversationContexts.ENDED)]
         else:
             dispatcher.utter_message(
@@ -2026,7 +2029,70 @@ class ActionHandleActionChoice(Action):
             "Type a station name to choose one, or type 'get directions' for the selected station.")
         dispatcher.utter_message(text="\n".join(lines))
         return [SlotSet("conversation_context", ConversationContexts.STATION_DETAILS)]
+    def _show_availabilty(self, dispatcher: CollectingDispatcher, tracker: Tracker) -> List[Dict[Text, Any]]:
+        
+        # Try to get lat/lon from slot first
+        lat = tracker.get_slot("latitude")
+        lon = tracker.get_slot("longitude")
 
+        # If not found, try to get from displayed_stations using selected_station
+        if (not lat or not lon):
+            selected_station = tracker.get_slot("selected_station")
+            displayed_stations = tracker.get_slot("displayed_stations") or []
+            if selected_station and displayed_stations:
+                for st in displayed_stations:
+                    if st.get("name") == selected_station:
+                        lat = st.get("latitude")
+                        lon = st.get("longitude")
+                        break
+
+        if not lat or not lon:
+            dispatcher.utter_message(text=f"I need a location to check availability.")
+            return []
+
+        status, updated_at, data = data_service._get_station_availability(float(lat), float(lon))
+
+        # msg = f"Availability: {status} \n {data}"
+
+        # Refined output formatting for availability data
+        msg = f"🔌 **Station Availability:**\n"
+        connectors = data.get('connectors', [])
+        for conn in connectors:
+            conn_type = conn.get('type', 'Unknown')
+            total = conn.get('total', 0)
+            current = conn.get('availability', {}).get('current', {})
+            available = current.get('available', 0)
+            occupied = current.get('occupied', 0)
+            reserved = current.get('reserved', 0)
+            unknown = current.get('unknown', 0)
+            out_of_service = current.get('outOfService', 0)
+            msg += (
+            f"\n• **{conn_type}** (Total: {total})\n"
+            f"   - Available: {available}\n"
+            f"   - Occupied: {occupied}\n"
+            f"   - Reserved: {reserved}\n"
+            f"   - Unknown: {unknown}\n"
+            f"   - Out of Service: {out_of_service}\n"
+            )
+            # Show per power level if available
+            per_power = conn.get('availability', {}).get('perPowerLevel', [])
+            for p in per_power:
+                power_kw = p.get('powerKW', '')
+                msg += (
+                    f"   - Power: {power_kw} kW | "
+                    f"Available: {p.get('available', 0)}, "
+                    f"Occupied: {p.get('occupied', 0)}, "
+                    f"Reserved: {p.get('reserved', 0)}, "
+                    f"Unknown: {p.get('unknown', 0)}, "
+                    f"Out of Service: {p.get('outOfService', 0)}\n"
+                )
+        # Optionally show chargingAvailability code for debugging
+        # msg += f"\nChargingAvailability ID: {data.get('chargingAvailability', '')}"
+        # if updated_at:
+        #     msg += f"\nUpdated: {updated_at}"
+
+        dispatcher.utter_message(text=msg)
+        return []
 
 class ActionHandleFollowUp(Action):
     def name(self) -> Text:
