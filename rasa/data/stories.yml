@@ -6,7 +6,7 @@ stories:
 - story: route_planning_flow
   steps:
   - intent: greet
-  - action: utter_greet
+  - action: action_collect_initial_location
   - intent: menu_selection
   - action: action_handle_menu_selection
   - intent: route_info
@@ -20,7 +20,7 @@ stories:
 - story: emergency_charging_flow
   steps:
   - intent: greet
-  - action: utter_greet
+  - action: action_collect_initial_location
   - intent: emergency_charging
   - action: action_handle_menu_selection
   - intent: emergency_location_input
@@ -34,7 +34,7 @@ stories:
 - story: preference_charging_flow
   steps:
   - intent: greet
-  - action: utter_greet
+  - action: action_collect_initial_location
   - intent: preference_charging
   - action: action_handle_menu_selection
   - intent: preference_selection

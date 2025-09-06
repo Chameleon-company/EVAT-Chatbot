@@ -8,58 +8,63 @@ let userLocation = null;
 
 // Restore chat from localStorage
 window.onload = async () => {
-    const stored = localStorage.getItem("chatHistory");
-    if (stored) chat.innerHTML = stored;
-  
-    addMessage("Hi! I’m EVAT. How can I help you today?", "bot");
-  
-    // Try to get user location silently
-    try {
-      const loc = await getUserLocation();
-      userLocation = {
-        lat: loc.coords.latitude,
-        lon: loc.coords.longitude
-      };
-    } catch {
-      // Do not display any message to user if location fails
-    }
+  const stored = localStorage.getItem("chatHistory");
+  if (stored) chat.innerHTML = stored;
+
+  addMessage("Hi! I'm EVAT. Getting your location...", "bot");
+
+  // Try to get user location and send it to Rasa
+  try {
+    const loc = await getUserLocation();
+    userLocation = {
+      lat: loc.coords.latitude,
+      lng: loc.coords.longitude  // Changed from 'lon' to 'lng' to match Rasa
+    };
+
+    // Automatically send location to Rasa to trigger the menu
+    await sendLocationToRasa();
+
+  } catch (error) {
+    // Location failed, show fallback message
+    addMessage("Location access denied. Please type your suburb name (e.g., 'Richmond') to continue.", "bot");
+  }
 };
 
 function addMessage(text, sender = "bot") {
-    // Create the message container
-    const msg = document.createElement("div");
-    msg.classList.add("message", sender);
-    msg.textContent = text;
-  
-    // Create the timestamp
-    const timestamp = document.createElement("div");
-    timestamp.className = "timestamp";
-    timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
-    // Append the message and timestamp to the chat
-    chat.appendChild(msg);
-    chat.appendChild(timestamp);
-  
-    // Manually set a timeout to ensure the DOM is updated before scrolling
-    setTimeout(() => {
-      // Ensure that we scroll the chat container and not just the messages
-      const chatContainer = document.getElementById("chat-container");
-  
-      // Log to ensure we are selecting the correct element
-      console.log("chatContainer scrollHeight: ", chatContainer.scrollHeight);
-      console.log("chatContainer scrollTop: ", chatContainer.scrollTop);
-      console.log("chatContainer clientHeight: ", chatContainer.clientHeight);
-  
-      // Scroll the chat container to the bottom
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }, 0);
-  
-    // Save chat history to localStorage
-    localStorage.setItem("chatHistory", chat.innerHTML);
-  }
-  
-  
-  
+  // Create the message container
+  const msg = document.createElement("div");
+  msg.classList.add("message", sender);
+  msg.textContent = text;
+
+  // Create the timestamp
+  const timestamp = document.createElement("div");
+  timestamp.className = "timestamp";
+  timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Append the message and timestamp to the chat
+  chat.appendChild(msg);
+  chat.appendChild(timestamp);
+
+  // Manually set a timeout to ensure the DOM is updated before scrolling
+  setTimeout(() => {
+    // Ensure that we scroll the chat container and not just the messages
+    const chatContainer = document.getElementById("chat-container");
+
+    // Log to ensure we are selecting the correct element
+    console.log("chatContainer scrollHeight: ", chatContainer.scrollHeight);
+    console.log("chatContainer scrollTop: ", chatContainer.scrollTop);
+    console.log("chatContainer clientHeight: ", chatContainer.clientHeight);
+
+    // Scroll the chat container to the bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }, 0);
+
+  // Save chat history to localStorage
+  localStorage.setItem("chatHistory", chat.innerHTML);
+}
+
+
+
 
 async function getUserLocation() {
   return new Promise((resolve, reject) => {
@@ -69,6 +74,29 @@ async function getUserLocation() {
       reject(new Error("Geolocation not supported."));
     }
   });
+}
+
+async function sendLocationToRasa() {
+  try {
+    const payload = {
+      sender: "user",
+      message: "hello",  // Send a greeting to trigger the menu
+      metadata: userLocation
+    };
+
+    const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (data.length > 0) {
+      data.forEach((msg) => addMessage(msg.text, "bot"));
+    }
+  } catch (err) {
+    console.error("Error sending location to Rasa:", err);
+  }
 }
 
 async function sendMessage(message) {

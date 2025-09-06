@@ -397,6 +397,46 @@ nlu:
     - ideal preference [station_name]
     - perfect preference [station_name]
     - preference choice [station_name]
+    - [Swinburne University - TC Building]
+    - [Monash Caufield]
+    - [RACV Solar Grovedale]
+    - [Forest Hill Chase Shopping Centre]
+    - [Blue Tongue Industries]
+    - [Evie Meredith]
+    - [ENGIE - Chadstone]
+    - [North Bellarine Aquatic Centre]
+    - [High Street]
+    - [bp pulse Dandenong North]
+    - [Swinburne University - TC Building]
+    - [Monash Caufield]
+    - [RACV Solar Grovedale]
+    - [Forest Hill Chase Shopping Centre]
+    - [Blue Tongue Industries]
+    - [Evie Meredith]
+    - [ENGIE - Chadstone]
+    - [North Bellarine Aquatic Centre]
+    - [High Street]
+    - [bp pulse Dandenong North]
+    - Swinburne University - TC Building
+    - Monash Caufield
+    - RACV Solar Grovedale
+    - Forest Hill Chase Shopping Centre
+    - Blue Tongue Industries
+    - Evie Meredith
+    - ENGIE - Chadstone
+    - North Bellarine Aquatic Centre
+    - High Street
+    - bp pulse Dandenong North
+    - i prefer [Swinburne University - TC Building]
+    - i prefer [Monash Caufield]
+    - i prefer [RACV Solar Grovedale]
+    - i prefer [Forest Hill Chase Shopping Centre]
+    - i prefer [Blue Tongue Industries]
+    - i prefer [Evie Meredith]
+    - i prefer [ENGIE - Chadstone]
+    - i prefer [North Bellarine Aquatic Centre]
+    - i prefer [High Street]
+    - i prefer [bp pulse Dandenong North]
 
 - intent: action_selection
   examples: |
@@ -458,6 +498,12 @@ nlu:
     - [Footscray](start_location) to [Williamstown](end_location)
     - from [Preston](start_location) to [Reservoir](end_location)
     - [Preston](start_location) to [Reservoir](end_location)
+    - to [Melbourne](end_location)
+    - to [Geelong](end_location)
+    - to [Richmond](end_location)
+    - to [Carlton](end_location)
+    - to [South Yarra](end_location)
+    - to [St Kilda](end_location)
 
 - intent: follow_up
   examples: |

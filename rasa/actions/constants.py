@@ -1,6 +1,9 @@
 # Simplified constants for the 3 main EV charging journeys
 
 class ConversationContexts:
+    # Initial location collection context
+    INITIAL_LOCATION_COLLECTION = "initial_location_collection"
+
     # Main journey contexts
     ROUTE_PLANNING = "route_planning"
     EMERGENCY_CHARGING = "emergency_charging"
@@ -42,12 +45,6 @@ class ActionTypes:
     GET_DIRECTIONS = "directions"
     COMPARE_OPTIONS = "compare"
     CHECK_AVAILABILITY = "availability"
-
-
-# class StationNumbers:
-#     ONE = "1"
-#     TWO = "2"
-#     THREE = "3"
 
 
 class Messages:

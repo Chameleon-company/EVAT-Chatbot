@@ -36,7 +36,6 @@ entities:
   - action_type
   - follow_up_type
   - station_name
-  # Enhanced preference entities from PR-1
   - charging_speed
   - connector_type
   - price
@@ -71,12 +70,6 @@ slots:
       - type: from_entity
         entity: current_location
 
-  battery_level:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_entity
-        entity: battery_level
 
   preference_type:
     type: text
@@ -115,6 +108,7 @@ slots:
     type: categorical
     influence_conversation: true
     values:
+      - initial_location_collection
       - route_planning
       - emergency_charging
       - preference_charging
@@ -139,7 +133,6 @@ slots:
       - type: from_entity
         entity: follow_up_type
 
-  # Enhanced preference slots from PR-1
   charging_speed:
     type: text
     influence_conversation: true
@@ -174,18 +167,27 @@ slots:
     mappings:
       - type: custom
 
-responses:
-  utter_greet:
-    - text: "Hello! Welcome to Melbourne EV Charging Assistant! ⚡\n\nPlease select an option:\n\n1. 🗺️ **Route Planning** - Plan charging stops for your journey\n2. 🚨 **Emergency Charging** - Find nearest stations when battery is low\n3. ⚡ **Charging Preferences** - Find stations by your preferences\n\n**🎯 Type 1, 2, or 3 to continue!**"
+  user_lat:
+    type: float
+    influence_conversation: false
+    mappings:
+      - type: custom
 
+  user_lng:
+    type: float
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+responses:
   utter_goodbye:
     - text: "Goodbye! Have a great journey! 🚗⚡"
 
 
 
 actions:
+  - action_collect_initial_location
   - action_handle_any_input
-  - action_handle_initial_input
   - action_handle_menu_selection
   - action_handle_route_input
   - action_handle_emergency_input
