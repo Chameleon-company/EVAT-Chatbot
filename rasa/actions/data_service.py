@@ -166,16 +166,55 @@ class ChargingStationDataService:
         return nearby_stations
 
     def get_stations_by_preference(self, location: Tuple[float, float], preference: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """Get stations based on preference (cheapest, fastest, closest)"""
+        """Get stations based on preference (cheapest, fastest, closest) within preference radius.
+
+        Logic:
+        1) Pre-filter stations within straight-line radius (PREFERENCE_PREFILTER_KM) for performance.
+        2) If real-time routing available, compute road distance per candidate and keep <= PREFERENCE_RADIUS_KM.
+           Fallback to straight-line distance if routing is unavailable.
+        3) Sort the filtered set by the selected preference and return top N.
+        """
         if self.charger_data.empty:
             return []
 
-        nearby_stations = self.get_nearby_stations(
-            location, radius_km=SEARCH_CONFIG['ROUTE_RADIUS_KM'])
+        preference_radius = SEARCH_CONFIG.get('PREFERENCE_RADIUS_KM', 10.0)
+        prefilter_radius = SEARCH_CONFIG.get(
+            'PREFERENCE_PREFILTER_KM', max(12.0, preference_radius))
+
+        # Step 1: Pre-filter by straight-line distance to reduce routing calls
+        prefiltered = self.get_nearby_stations(
+            location, radius_km=prefilter_radius)
+
+        # Step 2: Apply road distance filter using TomTom when available
+        filtered: List[Dict[str, Any]] = []
+        for station in prefiltered:
+            station_coords = (station.get('latitude'),
+                              station.get('longitude'))
+            road_distance_km: Optional[float] = None
+            if REAL_TIME_AVAILABLE and api_manager is not None:
+                try:
+                    route = api_manager.get_real_time_route(
+                        location, station_coords)  # type: ignore
+                    if route and route.get('source') == 'tomtom':
+                        road_distance_km = float(route.get('distance_km', 0))
+                except Exception:
+                    road_distance_km = None
+            # Fallback to straight-line
+            if road_distance_km is None:
+                road_distance_km = float(station.get('distance_km', 9999))
+
+            if road_distance_km <= preference_radius:
+                station_copy = dict(station)
+                station_copy['distance_km'] = round(road_distance_km, 2)
+                filtered.append(station_copy)
+
+        candidates = filtered
+        if not candidates:
+            return []
 
         if preference == "closest":
-            # Already sorted by distance
-            return nearby_stations[:limit]
+            candidates.sort(key=lambda s: s.get('distance_km', 9999))
+            return candidates[:limit]
 
         elif preference == "cheapest":
             # Sort by cost (extract numeric value from Usage Cost column)
@@ -193,7 +232,7 @@ class ChargingStationDataService:
                 except:
                     return 999.0
 
-            sorted_stations = sorted(nearby_stations, key=extract_cost)
+            sorted_stations = sorted(candidates, key=extract_cost)
             return sorted_stations[:limit]
 
         elif preference == "fastest":
@@ -210,11 +249,12 @@ class ChargingStationDataService:
                     return 0.0
 
             sorted_stations = sorted(
-                nearby_stations, key=extract_power, reverse=True)
+                candidates, key=extract_power, reverse=True)
             return sorted_stations[:limit]
 
         else:
-            return nearby_stations[:limit]
+            candidates.sort(key=lambda s: s.get('distance_km', 9999))
+            return candidates[:limit]
 
     def get_route_stations(self, start_location: str, end_location: str) -> List[Dict[str, Any]]:
         """Get charging stations along a route between two locations with real-time integration"""
@@ -419,6 +459,12 @@ class ChargingStationDataService:
             return self.get_nearby_stations(coords, radius_km=SEARCH_CONFIG['EMERGENCY_RADIUS_KM'])[:SEARCH_CONFIG['EMERGENCY_MAX_RESULTS']]
         return []
 
+    def get_emergency_stations_from_coordinates(self, coordinates: Tuple[float, float]) -> List[Dict[str, Any]]:
+        """Get emergency charging stations near coordinates"""
+        if coordinates:
+            return self.get_nearby_stations(coordinates, radius_km=SEARCH_CONFIG['EMERGENCY_RADIUS_KM'])[:SEARCH_CONFIG['EMERGENCY_MAX_RESULTS']]
+        return []
+
     def get_station_details(self, station_name: str) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific station"""
         if self.charger_data.empty:
@@ -462,13 +508,26 @@ class ChargingStationDataService:
             'trip_time': "Calculating..."  # Will use TomTom API later
         }
 
-    def _get_location_coordinates(self, location_name: str) -> Optional[Tuple[float, float]]:
-        """Get coordinates for a location name with enhanced fuzzy matching"""
-        if not location_name:
+    def _get_location_coordinates(self, location_input) -> Optional[Tuple[float, float]]:
+        """Get coordinates for a location (name or coordinates tuple) with enhanced fuzzy matching"""
+        if not location_input:
             return None
 
-        # Clean and normalize location name
-        location_clean = location_name.lower().strip()
+        # If location_input is already coordinates (tuple or list), return it directly
+        if (isinstance(location_input, (tuple, list)) and len(location_input) == 2):
+            try:
+                lat, lng = float(location_input[0]), float(location_input[1])
+                if lat != 0 and lng != 0:
+                    logger.info(f"Using provided coordinates: ({lat}, {lng})")
+                    return (lat, lng)
+            except (ValueError, TypeError):
+                pass
+
+        # Handle string input (suburb names)
+        if isinstance(location_input, str):
+            location_clean = location_input.lower().strip()
+        else:
+            return None
 
         # Handle common variations and abbreviations
         location_variations = self._get_location_variations(location_clean)
@@ -493,13 +552,13 @@ class ChargingStationDataService:
                         lon = float(location_row.get('longitude', 0))
                         if lat != 0 and lon != 0:
                             logger.info(
-                                f"Found coordinates for '{location_name}' -> '{location_row.get('suburb')}': ({lat}, {lon})")
+                                f"Found coordinates for '{location_clean}' -> '{location_row.get('suburb')}': ({lat}, {lon})")
                             return (lat, lon)
                     except (ValueError, TypeError):
                         pass
 
         logger.warning(
-            f"Could not find coordinates for location: '{location_name}'")
+            f"Could not find coordinates for location: '{location_input}'")
         return None
 
     def _get_location_variations(self, location_name: str) -> List[str]:

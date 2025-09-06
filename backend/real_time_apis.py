@@ -12,13 +12,11 @@ try:
     repo_root = os.path.abspath(os.path.join(current_dir, '..'))
     env_dir = os.path.join(repo_root, 'env')
 
-    # Try env/.env, then project .env
     if os.path.exists(os.path.join(env_dir, '.env')):
         load_dotenv(os.path.join(env_dir, '.env'))
     elif os.path.exists(os.path.join(repo_root, '.env')):
         load_dotenv(os.path.join(repo_root, '.env'))
 except Exception:
-    # dotenv is optional; proceed with os.environ only
     pass
 
 
