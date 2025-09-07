@@ -238,7 +238,7 @@ class ActionHandleMenuSelection(Action):
 
                     # Show the available stations again
                     dispatcher.utter_message(text=format_station_list(
-                        stations, limit=5, show_indices=True))
+                        stations, limit=10, show_indices=True))
 
                     dispatcher.utter_message(
                         text="**Simply type the station name to get details**")
@@ -306,7 +306,7 @@ class ActionHandleMenuSelection(Action):
                     response += f"Found {len(stations)} charging stations along your route:\n\n"
 
                     displayed = []
-                    for i, station in enumerate(stations[:3]):
+                    for i, station in enumerate(stations[:10]):
                         response += f"**{i+1}. {station.get('name', f'Station {i+1}')}**\n"
                         dist = station.get('distance_km')
                         if isinstance(dist, (int, float)):
@@ -317,7 +317,6 @@ class ActionHandleMenuSelection(Action):
                             'name': station.get('name', f'Station {i+1}')
                         })
 
-                    response += "**Which station would you like to know more about?**\n\n"
                     response += "💡 Simply type the station name"
 
                     dispatcher.utter_message(text=response)
@@ -408,21 +407,17 @@ class ActionHandleRouteInput(Action):
         stored_lng = tracker.get_slot("user_lng")
         stored_location = tracker.get_slot("current_location")
 
-        # Check for simplified "to [destination]" format when user has stored location
-        if 'to' in message and (stored_lat and stored_lng):
-            # Extract destination from the message
-            import re
-            to_match = re.search(r'\bto\b', message, re.IGNORECASE)
-
-            if to_match:
-                to_index = to_match.start()
-                end_location = message[to_index + 2:].strip()
-
-                if end_location and len(end_location) > 0:
-                    # Use stored location as start, process the route
-                    start_location = f"Your Location ({stored_location or 'GPS'})"
-
-                    # Process the route with stored start location
+        if stored_lat and stored_lng:
+            raw_text = tracker.latest_message.get('text', '') or ''
+            raw_text = raw_text.strip()
+            if raw_text:
+                import re
+                # Strip an optional leading 'to'
+                dest_text = re.sub(r'^\s*to\b', '', raw_text,
+                                   flags=re.IGNORECASE).strip()
+                if dest_text:
+                    start_location = (stored_lat, stored_lng)
+                    end_location = dest_text
                     return self._process_route(dispatcher, start_location, end_location)
 
         # Check for traditional "from [start] to [destination]" format
@@ -761,57 +756,35 @@ class ActionHandleRouteInfo(Action):
         start_location = None
         end_location = None
 
-        for entity in tracker.latest_message.get('entities', []):
-            if entity['entity'] == 'start_location':
-                start_location = entity['value']
-            elif entity['entity'] == 'end_location':
-                end_location = entity['value']
-
-        # If no entities found, try to parse "to [destination]" format
-        if not start_location or not end_location:
-            message = tracker.latest_message.get('text', '').lower().strip()
-
-            # Check for "to [destination]" format
-            if 'to' in message and not ('from' in message):
-                import re
-                to_match = re.search(r'\bto\b', message, re.IGNORECASE)
-
-                if to_match:
-                    to_index = to_match.start()
-                    end_location = message[to_index + 2:].strip()
-
-                    if end_location and len(end_location) > 0:
-                        # Check for stored user location
-                        stored_lat = tracker.get_slot("user_lat")
-                        stored_lng = tracker.get_slot("user_lng")
-                        stored_location = tracker.get_slot("current_location")
-
-                        if stored_lat and stored_lng:
-                            # Use stored coordinates directly for data service
-                            start_location = (stored_lat, stored_lng)
-                        else:
-                            # No stored location, ask user to provide start
-                            dispatcher.utter_message(
-                                text=f"🗺️ **Route Planning**\n\n"
-                                     f"✅ Destination: {end_location}\n"
-                                     f"❌ I don't have your current location stored\n\n"
-                                     f"Please provide your starting point:\n"
-                                     f"• 'from [start] to {end_location}'\n"
-                                     f"• Or share your location again")
-                            return []
+        raw_text = tracker.latest_message.get('text', '') or ''
+        raw_text = raw_text.strip()
+        if raw_text:
+            import re
+            # Only treat messages that START with 'to' as destination-only inputs here
+            if re.match(r'^\s*to\b', raw_text, flags=re.IGNORECASE):
+                dest_text = re.sub(r'^\s*to\b', '', raw_text,
+                                   flags=re.IGNORECASE).strip()
+                if dest_text and 'from' not in raw_text.lower():
+                    stored_lat = tracker.get_slot("user_lat")
+                    stored_lng = tracker.get_slot("user_lng")
+                    if stored_lat and stored_lng:
+                        start_location = (stored_lat, stored_lng)
+                        end_location = dest_text
+                        slots = [
+                            SlotSet("start_location", start_location),
+                            SlotSet("end_location", end_location)
+                        ]
+                        return slots + self._find_route_stations(dispatcher, start_location, end_location)
                     else:
+                        dispatcher.utter_message(
+                            text=f"🗺️ **Route Planning**\n\n"
+                                 f"✅ Destination: {dest_text}\n"
+                                 f"❌ I don't have your current location stored\n\n"
+                                 f"Please provide your starting point:\n"
+                                 f"• 'from [start] to {dest_text}'\n"
+                                 f"• Or share your location again")
                         return []
-                else:
-                    return []
-            else:
-                return []
-
-        slots = [
-            SlotSet("start_location", start_location),
-            SlotSet("end_location", end_location)
-        ]
-
-        return slots + self._find_route_stations(dispatcher, start_location, end_location)
+        return []
 
     def _find_route_stations(self, dispatcher: CollectingDispatcher, start_location, end_location: str) -> List[Dict[Text, Any]]:
         stations = data_service.get_route_stations(
@@ -1755,7 +1728,7 @@ class ActionHandleActionChoice(Action):
             route_stations = data_service.get_route_stations(
                 start_location, end_location) if start_location and end_location else []
             # Map by lowercased name for quick lookup
-            by_name = {(s.get('name') or '').lower()                       : s for s in route_stations}
+            by_name = {(s.get('name') or '').lower(): s for s in route_stations}
 
             # Prefer the ones we showed to the user first
             for s in displayed[:5]:

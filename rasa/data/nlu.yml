@@ -32,7 +32,6 @@ nlu:
     - hey dude
     - hey please
     - hey there please
-    - hey dude please
     - start
  
 
@@ -198,6 +197,14 @@ nlu:
   examples: |
     - [station_name]
     - [Malvern Central](station_name)
+    - Malvern Central
+    - Swinburne University - TC Building
+    - Tesla Supercharger Box Hill
+    - City of Stonnington
+    - Forest Hill Chase Shopping Centre
+    - Swinburne University - TC Building
+    - Telsa Supercharger Box Hill
+    - Malvern Central
     - [Lynbrook Village](station_name)
     - [RMIT - City Campus](station_name)
     - [ENGIE - Victoria Gardens](station_name)
@@ -211,12 +218,91 @@ nlu:
     - Collingwood Library
     - Monash Caufield
     - ENGIE - Chadstone 2
+      - Malvern Central
+    - Lynbrook Village
+    - RMIT - City Campus
+    - Camberwell Supercharger
+    - Chadstone Shopping Centre
+    - Tesla Supercharger South Melbourne
+    - ENGIE - Victoria Gardens
+    - Swinburne University - TC Building
+    - High Street
+    - Evie Portland
+    - North Bellarine Aquatic Centre
+    - 100 St Kilda Road
+    - Collingwood Library
+    - Exploren Charging Station
+    - Fleming Park
+    - Monash Caufield
+    - Mont Albert
+    - Exploren Charging Station
+    - ENGIE - Chadstone 2
+    - Engie - The Glen
+    - Bayside Gateway
+    - Tesla Supercharger Brighton East
+    - Chargefox - Barnawartha North
+    - Chargefox - Euroa
+    - 11 Nicholson Street
+    - Lorbek Luxury Cars
+    - JET Charge Office
+    - Evie Richmond Library
+    - Woolworths Fishermans Bend
+    - Middy's Port Melbourne
+    - Ampcharge Barkly Square
+    - GET Electric Head Office
+    - Brunswick EV Hub
+    - David Street Car Park
+    - RMIT Brunswick
+    - The Parade Ascot Vale Car Park
+    - Moonee Ponds Central
+    - St Kilda Town Hall
+    - City of Stonnington
+    - Forest Hill Chase Shopping Centre
+    - Swinburne University - TC Building
+    - Tesla Supercharger Box Hill
+    - Malvern Central
+    - Telsa Supercharger Box Hill
+    - Coburg Civic Centre / Moreland City
+    - Coburg Town Hall / Moreland City
+    - Austin Tower Carpark Level B1
+    - Coburg North EV Fast Charge
+    - Oak Park Sports & Aquatic Centre
+    - Toyota Altona
+    - CB Smith Reserve
+    - Hobsons Bay Civic Centre
+    - Chargefox Airport West
+    - Tesla Supercharger Campbellfield
+    - Ampol Foodary Altona North
+    - Bridge Street
+    - Tesla Supercharger Box Hill
+    - Evie Glen Gala Village
+    - Keilor Central
+    - Tesla Supercharger Oakleigh Repair Centre
+    - Bayside Council
+    - Jolt Cheltenham
+    - Uni Hill Town Centre
+    - Greensborough Plaza
+    - Watermarc Carpark (LG)
+    - Brimbank Shopping Centre
+    - Southland Medical Centre
+    - Research Way - N1 Carpark monash
+    - Ampol Derrimut
+    - Jolt Black Rock
+    - BP Northpoint
+    - Eltham Leisure Centre
+    - BP pulse Diamond Creek
+    - BP Pulse
+    - Shell Coles Express Taylors Lakes
+    - Watergardens Shopping Centre
+    - Point Cook Town Centre
+    - Red Rooster Vermont
+    - Greenvale Woolworths
     - Engie - The Glen
     - Bayside Gateway
     - Tesla Supercharger Brighton East
     - Chargefox - Barnawartha North
 
-# Enhanced preference filtering intent from PR-1
+# Enhanced preference filtering intent
 - intent: filter_by_preferences
   examples: |
     - show me [fast](charging_speed) charging stations
@@ -371,6 +457,49 @@ nlu:
     - Mont Albert
     - Engie - The Glen
     - Tesla Supercharger Brighton East
+    - GET Electric Head Office
+    - Brunswick EV Hub
+    - David Street Car Park
+    - RMIT Brunswick
+    - The Parade Ascot Vale Car Park
+    - Moonee Ponds Central
+    - St Kilda Town Hall
+    - City of Stonnington
+    - Coburg Civic Centre / Moreland City
+    - Coburg Town Hall / Moreland City
+    - Austin Tower Carpark Level B1
+    - Coburg North EV Fast Charge
+    - Oak Park Sports & Aquatic Centre
+    - Toyota Altona
+    - CB Smith Reserve
+    - Hobsons Bay Civic Centre
+    - Chargefox Airport West
+    - Tesla Supercharger Campbellfield
+    - Ampol Foodary Altona North
+    - Bridge Street
+    - Tesla Supercharger Box Hill
+    - Evie Glen Gala Village
+    - Keilor Central
+    - Tesla Supercharger Oakleigh Repair Centre
+    - Bayside Council
+    - Jolt Cheltenham
+    - Uni Hill Town Centre
+    - Greensborough Plaza
+    - Watermarc Carpark (LG)
+    - Brimbank Shopping Centre
+    - Southland Medical Centre
+    - Research Way - N1 Carpark monash
+    - Ampol Derrimut
+    - Jolt Black Rock
+    - BP Northpoint
+    - Eltham Leisure Centre
+    - BP pulse Diamond Creek
+    - BP Pulse
+    - Shell Coles Express Taylors Lakes
+    - Watergardens Shopping Centre
+    - Point Cook Town Centre
+    - Red Rooster Vermont
+    - Greenvale Woolworths
     - bp pulse Dandenong North
     - i prefer [Swinburne University - TC Building]
     - i prefer [Monash Caufield]
@@ -580,6 +709,11 @@ nlu:
     - Moonee Ponds Central
     - St Kilda Town Hall
     - City of Stonnington
+    - Forest Hill Chase Shopping Centre
+    - Swinburne University - TC Building
+    - Tesla Supercharger Box Hill
+    - Malvern Central
+    - Telsa Supercharger Box Hill
     - Coburg Civic Centre / Moreland City
     - Coburg Town Hall / Moreland City
     - Austin Tower Carpark Level B1
