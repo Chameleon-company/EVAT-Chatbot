@@ -4,7 +4,7 @@ Centralizes configurable values and removes hardcoded business logic
 Uses only data available in charger_info_mel.csv
 """
 
-# Charging Configuration - Based on actual CSV data``
+# Charging Configuration - Based on CSV data``
 CHARGING_CONFIG = {
     # Standard EV battery capacity estimates (kWh) - will be replaced by vehicle-specific data later
     'STANDARD_BATTERY_CAPACITY': 60,  # Average EV battery capacity
@@ -30,14 +30,13 @@ CHARGING_CONFIG = {
 
 # Search Configuration - Based on actual data coverage
 SEARCH_CONFIG = {
-    'DEFAULT_RADIUS_KM': 15.0,  # Increased to cover more stations
-    'EMERGENCY_RADIUS_KM': 10.0,  # Emergency search radius
-    'ROUTE_RADIUS_KM': 20.0,  # Route planning search radius
-    'PREFERENCE_RADIUS_KM': 10.0,  # Limit preference results to 10 km
-    # Pre-filter by straight-line before road distance
-    'PREFERENCE_PREFILTER_KM': 15.0,
-    'MAX_RESULTS': 5,  # Maximum stations to show
-    'EMERGENCY_MAX_RESULTS': 3,  # Emergency results limit
+    'DEFAULT_RADIUS_KM': 8.0,
+    'EMERGENCY_RADIUS_KM': 15.0,
+    'ROUTE_RADIUS_KM': 12.0,
+    'PREFERENCE_RADIUS_KM': 10.0,
+    'PREFERENCE_PREFILTER_KM': 10.0,
+    'MAX_RESULTS': 5,
+    'EMERGENCY_MAX_RESULTS': 2,
 }
 
 # Location Configuration
@@ -79,7 +78,7 @@ DATA_CONFIG = {
         'USAGE_COST': 'Usage Cost',
         'NUMBER_OF_POINTS': 'Number of Points',
         'CONNECTION_TYPES': 'Connection Types',
-        'LATITUDE': 'latitude',
-        'LONGITUDE': 'longitude'
+        'LATITUDE': 'Latitude',
+        'LONGITUDE': 'Longitude'
     }
 }

@@ -75,7 +75,6 @@ rules:
   - intent: emergency_location_input
   - action: action_handle_emergency_location_input
 
-# Emergency flow: sometimes a bare suburb is misclassified as preference_location_input.
 # Treat it as an emergency location when we're in emergency mode.
 - rule: Handle preference-style location as emergency when in emergency flow
   condition:
@@ -131,6 +130,15 @@ rules:
   - intent: route_station_selection
   - action: action_handle_route_station_selection
 
+# Fallback: treat unclassified input as station selection in route results
+- rule: Handle fallback as route station selection
+  condition:
+  - slot_was_set:
+    - conversation_context: route_planning_results
+  steps:
+  - intent: nlu_fallback
+  - action: action_handle_route_station_selection
+
 # Station selection after comparison (still in station details)
 - rule: Handle route station selection in station details
   condition:
@@ -138,6 +146,15 @@ rules:
     - conversation_context: station_details
   steps:
   - intent: route_station_selection
+  - action: action_handle_route_station_selection
+
+# Fallback: treat unclassified input as station selection in station details
+- rule: Handle fallback as route station selection in station details
+  condition:
+  - slot_was_set:
+    - conversation_context: station_details
+  steps:
+  - intent: nlu_fallback
   - action: action_handle_route_station_selection
 
 # Emergency station selection rule - only valid in emergency context

@@ -190,7 +190,6 @@ actions:
   - action_handle_any_input
   - action_handle_menu_selection
   - action_handle_route_input
-  - action_handle_emergency_input
   - action_handle_preference_input
   - action_handle_preference_location_input
   - action_handle_route_station_selection

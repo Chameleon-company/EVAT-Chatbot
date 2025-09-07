@@ -7,7 +7,6 @@ Uses ONLY data available in charger_info_mel.csv
 import pandas as pd
 import os
 from typing import Dict, List, Tuple, Optional, Any
-import difflib
 from math import radians, sin, cos, sqrt, atan2
 import logging
 import re
@@ -36,7 +35,6 @@ class ChargingStationDataService:
     def __init__(self):
         self.charger_data = None
         self.coordinates_data = None
-        self.ml_dataset = None
         self._load_datasets()
 
     def _load_datasets(self):
@@ -70,53 +68,14 @@ class ChargingStationDataService:
                     "Coordinates dataset not found - will use charger data for coordinates")
                 self.coordinates_data = pd.DataFrame()
 
-            # Load ML dataset (optional - for future enhancements)
-            ml_path = os.path.join(
-                data_dir, DATA_CONFIG['ML_DATASET_PATH'].split('/')[-1])
-            if os.path.exists(ml_path):
-                self.ml_dataset = pd.read_csv(ml_path)
-                logger.info(
-                    f"Loaded {len(self.ml_dataset)} ML dataset records")
-            else:
-                logger.warning(
-                    "ML dataset not found - not critical for core functionality")
-                self.ml_dataset = pd.DataFrame()
+            # ML dataset loading removed (unused)
 
         except Exception as e:
             logger.error(f"Error loading datasets: {e}")
             self.charger_data = pd.DataFrame()
             self.coordinates_data = pd.DataFrame()
-            self.ml_dataset = pd.DataFrame()
 
-    def get_stations_by_suburb(self, suburb: str) -> List[Dict[str, Any]]:
-        """Get all charging stations in a specific suburb"""
-        if self.charger_data.empty:
-            return []
-
-        suburb_lower = suburb.lower()
-        # Search in suburb column (case insensitive)
-        mask = self.charger_data[DATA_CONFIG['CSV_COLUMNS']['SUBURB']].str.lower(
-        ).str.contains(suburb_lower, na=False)
-        stations = self.charger_data[mask]
-
-        if stations.empty:
-            return []
-
-        result = []
-        for _, station in stations.iterrows():
-            station_info = {
-                'name': station.get(DATA_CONFIG['CSV_COLUMNS']['CHARGER_NAME'], 'Unknown'),
-                'address': station.get(DATA_CONFIG['CSV_COLUMNS']['ADDRESS'], 'Address not available'),
-                'suburb': station.get(DATA_CONFIG['CSV_COLUMNS']['SUBURB'], 'Unknown'),
-                'power': station.get(DATA_CONFIG['CSV_COLUMNS']['POWER_KW'], 'Power not available'),
-                'cost': station.get(DATA_CONFIG['CSV_COLUMNS']['USAGE_COST'], 'Cost not available'),
-                'points': station.get(DATA_CONFIG['CSV_COLUMNS']['NUMBER_OF_POINTS'], 'Points not available'),
-                'latitude': station.get(DATA_CONFIG['CSV_COLUMNS']['LATITUDE'], 0.0),
-                'longitude': station.get(DATA_CONFIG['CSV_COLUMNS']['LONGITUDE'], 0.0)
-            }
-            result.append(station_info)
-
-        return result
+    # Removed get_stations_by_suburb (unused)
 
     def get_nearby_stations(self, location: Tuple[float, float], radius_km: float = None) -> List[Dict[str, Any]]:
         """Get charging stations within specified radius of location"""
@@ -284,7 +243,16 @@ class ChargingStationDataService:
             try:
                 route_info = api_manager.get_real_time_route(
                     start_coords, end_coords)
-                logger.info(f"Real-time route data: {route_info}")
+                if isinstance(route_info, dict):
+                    instructions = route_info.get('instructions') or []
+                    logger.info(
+                        f"Real-time route data: distance_km={route_info.get('distance_km')} "
+                        f"duration_min={route_info.get('duration_minutes')} "
+                        f"delay_min={route_info.get('traffic_delay_minutes')} "
+                        f"instructions_count={len(instructions)}"
+                    )
+                else:
+                    logger.info("Real-time route data received")
             except Exception as e:
                 logger.warning(f"Real-time route data unavailable: {e}")
 
@@ -320,8 +288,28 @@ class ChargingStationDataService:
             return []
 
         # Calculate optimal search radius based on route distance
-        search_radius = min(route_distance * 0.3,
-                            SEARCH_CONFIG['ROUTE_RADIUS_KM'])
+        # Add a small floor to avoid too-small radius on short routes
+        search_radius = max(5.0, min(route_distance * 0.3,
+                            SEARCH_CONFIG['ROUTE_RADIUS_KM']))
+        logger.info(
+            f"Route distance={route_distance:.2f} km, search_radius={search_radius:.2f} km")
+
+        # Require real-time polyline to define true route corridor
+        polyline: Optional[List[Tuple[float, float]]] = None
+        try:
+            if route_info and isinstance(route_info.get('polyline'), list):
+                raw_poly = route_info.get('polyline') or []
+                if len(raw_poly) >= 2:
+                    polyline = [(float(lat), float(lon)) for (lat, lon) in raw_poly if isinstance(
+                        lat, (int, float)) and isinstance(lon, (int, float))]
+        except Exception:
+            polyline = None
+
+        # If no polyline available, do not attempt alternative techniques
+        if not polyline:
+            logger.warning(
+                "No polyline available from real-time route; skipping station search along route")
+            return []
 
         # Get all stations within the search area
         all_stations = []
@@ -336,7 +324,10 @@ class ChargingStationDataService:
                     station_coords = (station_lat, station_lon)
 
                     # Check if station is within search radius of the route
-                    if self._is_station_along_route(start_coords, end_coords, station_coords, search_radius):
+                    # Use minimum perpendicular distance to any segment of the polyline
+                    min_perp = self._min_perpendicular_distance_to_polyline(
+                        polyline, station_coords)
+                    if min_perp is not None and min_perp <= search_radius:
                         station_info = {
                             'name': station.get(DATA_CONFIG['CSV_COLUMNS']['CHARGER_NAME'], 'Unknown'),
                             'address': station.get(DATA_CONFIG['CSV_COLUMNS']['ADDRESS'], 'Address not available'),
@@ -352,6 +343,9 @@ class ChargingStationDataService:
                         all_stations.append(station_info)
             except (ValueError, TypeError):
                 continue
+
+        logger.info(
+            f"Candidate stations within route corridor: {len(all_stations)}")
 
         if not all_stations:
             return []
@@ -369,72 +363,92 @@ class ChargingStationDataService:
         # Return top stations with route information
         return all_stations[:SEARCH_CONFIG['MAX_RESULTS']]
 
+    def _min_perpendicular_distance_to_polyline(self, polyline: List[Tuple[float, float]], point: Tuple[float, float]) -> Optional[float]:
+        """Compute minimum perpendicular distance (km) from point to any segment in the polyline."""
+        if not polyline or len(polyline) < 2:
+            return None
+        try:
+            from math import radians, cos, sqrt
+            R = LOCATION_CONFIG['EARTH_RADIUS_KM']
+            px, py = point
+            pxr, pyr = radians(px), radians(py)
+            # Use global ref lat as average of polyline to reduce distortion
+            ref_lat = sum(radians(lat) for lat, _ in polyline) / len(polyline)
+            cos_ref = cos(ref_lat)
+            # Choose an origin (first vertex)
+            lat0r, lon0r = radians(polyline[0][0]), radians(polyline[0][1])
+            # Project point relative to origin
+            P_x = (pyr - lon0r) * cos_ref * R
+            P_y = (pxr - lat0r) * R
+
+            min_dist = None
+            # Iterate segments
+            prev_lat, prev_lon = polyline[0]
+            for lat, lon in polyline[1:]:
+                a_lat_r, a_lon_r = radians(prev_lat), radians(prev_lon)
+                b_lat_r, b_lon_r = radians(lat), radians(lon)
+                A_x = (a_lon_r - lon0r) * cos_ref * R
+                A_y = (a_lat_r - lat0r) * R
+                B_x = (b_lon_r - lon0r) * cos_ref * R
+                B_y = (b_lat_r - lat0r) * R
+                v_x = B_x - A_x
+                v_y = B_y - A_y
+                w_x = P_x - A_x
+                w_y = P_y - A_y
+                seg_len_sq = v_x * v_x + v_y * v_y
+                if seg_len_sq <= 1e-9:
+                    # Degenerate segment, use distance to A
+                    d_x = P_x - A_x
+                    d_y = P_y - A_y
+                    d = sqrt(d_x * d_x + d_y * d_y)
+                else:
+                    t = (w_x * v_x + w_y * v_y) / seg_len_sq
+                    if t < 0.0:
+                        Q_x, Q_y = A_x, A_y
+                    elif t > 1.0:
+                        Q_x, Q_y = B_x, B_y
+                    else:
+                        Q_x = A_x + t * v_x
+                        Q_y = A_y + t * v_y
+                    d_x = P_x - Q_x
+                    d_y = P_y - Q_y
+                    d = sqrt(d_x * d_x + d_y * d_y)
+                if min_dist is None or d < min_dist:
+                    min_dist = d
+                prev_lat, prev_lon = lat, lon
+            return min_dist
+        except Exception:
+            return None
+
     def _enhance_stations_with_real_time_data(self, stations: List[Dict[str, Any]],
                                               start_coords: Tuple[float, float],
                                               end_coords: Tuple[float, float]) -> List[Dict[str, Any]]:
-        """Enhance station data with real-time traffic and availability information"""
+        """Enhance station data with real-time traffic only. Per-station enrichment removed."""
         if not REAL_TIME_AVAILABLE:
             return stations
 
-        enhanced_stations = []
+        enhanced_stations: List[Dict[str, Any]] = []
         for station in stations:
-            enhanced_station = station.copy()
-
             try:
-                # Get real-time station data
-                station_coords = (station['latitude'], station['longitude'])
-                real_time_data = api_manager.get_charging_station_real_time_data(
-                    station.get('name', ''), station_coords
-                )
-
-                if real_time_data and real_time_data.get('source') == 'tomtom':
-                    enhanced_station['real_time_available'] = real_time_data.get(
-                        'available_connectors', 0)
-                    enhanced_station['real_time_total'] = real_time_data.get(
-                        'total_connectors', 0)
-                    enhanced_station['real_time_speed'] = real_time_data.get(
-                        'charging_speed', 'Unknown')
-                    enhanced_station['real_time_updated'] = real_time_data.get(
-                        'last_updated', 'Unknown')
-                    enhanced_station['data_source'] = 'Real-time'
-                else:
-                    enhanced_station['data_source'] = 'CSV Database'
-
-                # Get traffic information for route to this station
+                station_coords = (station.get('latitude'),
+                                  station.get('longitude'))
                 if station_coords != start_coords:
                     traffic_info = api_manager.get_real_time_traffic(
                         start_coords, station_coords)
                     if traffic_info and traffic_info.get('source') == 'tomtom':
-                        enhanced_station['traffic_status'] = traffic_info.get(
-                            'traffic_status', 'Unknown')
-                        enhanced_station['congestion_level'] = traffic_info.get(
-                            'congestion_level', 0)
-                        enhanced_station['estimated_delay'] = traffic_info.get(
-                            'traffic_delay_seconds', 0)
-
-            except Exception as e:
-                logger.warning(
-                    f"Could not enhance station {station.get('name', 'Unknown')} with real-time data: {e}")
-                enhanced_station['data_source'] = 'CSV Database'
-
-            enhanced_stations.append(enhanced_station)
-
+                        station = {**station,
+                                   'traffic_status': traffic_info.get('traffic_status', 'Unknown'),
+                                   'congestion_level': traffic_info.get('congestion_level', 0),
+                                   'estimated_delay': traffic_info.get('estimated_delay_minutes', 0),
+                                   'data_source': 'Real-time'}
+                    else:
+                        station = {**station, 'data_source': 'CSV Database'}
+            except Exception:
+                pass
+            enhanced_stations.append(station)
         return enhanced_stations
 
-    def _is_station_along_route(self, start_coords: Tuple[float, float],
-                                end_coords: Tuple[float, float],
-                                station_coords: Tuple[float, float],
-                                max_distance: float) -> bool:
-        """Check if a station is within reasonable distance of the route"""
-        # Calculate perpendicular distance from station to route line
-        # This is a simplified version - in production, you'd use proper geometric calculations
-
-        # For now, check if station is within max_distance of either endpoint
-        start_distance = self._calculate_distance(start_coords, station_coords)
-        end_distance = self._calculate_distance(station_coords, end_coords)
-
-        # Station should be reasonably close to the route
-        return start_distance <= max_distance or end_distance <= max_distance
+    # Removed _is_station_along_route (replaced by polyline-based check)
 
     def _calculate_route_position_score(self, distance_from_start: float, total_route_distance: float) -> float:
         """Calculate how well positioned a station is along the route"""
@@ -443,12 +457,9 @@ class ChargingStationDataService:
 
         # Calculate position as percentage along route (0 = start, 1 = end)
         position = distance_from_start / total_route_distance
-
         # Optimal positions are around 1/3 and 2/3 of the route
-        # Score based on distance from optimal positions
         optimal_positions = [0.33, 0.67]
         min_distance = min(abs(position - opt) for opt in optimal_positions)
-
         # Lower score is better (closer to optimal position)
         return min_distance
 
@@ -503,13 +514,12 @@ class ChargingStationDataService:
             'power': f"{power}kW",
             'points': f"{station.get(DATA_CONFIG['CSV_COLUMNS']['NUMBER_OF_POINTS'], 'Unknown')} points",
             'cost': station.get(DATA_CONFIG['CSV_COLUMNS']['USAGE_COST'], 'Cost not available'),
-            'estimated_cost': self._estimate_charging_cost(station.get(DATA_CONFIG['CSV_COLUMNS']['USAGE_COST'], '0')),
             'charging_time': charging_time,
-            'trip_time': "Calculating..."  # Will use TomTom API later
+            'trip_time': "Calculating..."
         }
 
     def _get_location_coordinates(self, location_input) -> Optional[Tuple[float, float]]:
-        """Get coordinates for a location (name or coordinates tuple) with enhanced fuzzy matching"""
+        """Get coordinates using ONLY charger_info_mel.csv (station name, address, or suburb)."""
         if not location_input:
             return None
 
@@ -529,84 +539,122 @@ class ChargingStationDataService:
         else:
             return None
 
-        # Handle common variations and abbreviations
-        location_variations = self._get_location_variations(location_clean)
+        # Direct lookups against charger_info_mel.csv
+        try:
+            if self.charger_data is None or self.charger_data.empty:
+                return None
 
-        # Try coordinates dataset first with fuzzy matching
-        if not self.coordinates_data.empty:
-            for variation in location_variations:
-                # Exact match first
-                mask = self.coordinates_data['suburb'].str.lower() == variation
-                location_data = self.coordinates_data[mask]
+            name_col = DATA_CONFIG['CSV_COLUMNS']['CHARGER_NAME']
+            addr_col = DATA_CONFIG['CSV_COLUMNS']['ADDRESS']
+            suburb_col = DATA_CONFIG['CSV_COLUMNS']['SUBURB']
+            lat_col = DATA_CONFIG['CSV_COLUMNS']['LATITUDE']
+            lon_col = DATA_CONFIG['CSV_COLUMNS']['LONGITUDE']
 
-                if location_data.empty:
-                    # Partial match
-                    mask = self.coordinates_data['suburb'].str.lower(
-                    ).str.contains(variation, na=False)
-                    location_data = self.coordinates_data[mask]
+            # 1) Exact/contains match by station name
+            try:
+                mask = self.charger_data[name_col].astype(
+                    str).str.lower().str.contains(location_clean, na=False)
+                rows = self.charger_data[mask]
+                if not rows.empty:
+                    row = rows.iloc[0]
+                    lat = float(row.get(lat_col, 0))
+                    lon = float(row.get(lon_col, 0))
+                    if lat != 0 and lon != 0:
+                        logger.info(
+                            f"Found coordinates from station name: '{row.get(name_col)}' → ({lat}, {lon})")
+                        return (lat, lon)
+            except Exception:
+                pass
 
-                if not location_data.empty:
-                    location_row = location_data.iloc[0]
-                    try:
-                        lat = float(location_row.get('latitude', 0))
-                        lon = float(location_row.get('longitude', 0))
+            # 2) Contains match by address
+            try:
+                mask = self.charger_data[addr_col].astype(
+                    str).str.lower().str.contains(location_clean, na=False)
+                rows = self.charger_data[mask]
+                if not rows.empty:
+                    row = rows.iloc[0]
+                    lat = float(row.get(lat_col, 0))
+                    lon = float(row.get(lon_col, 0))
+                    if lat != 0 and lon != 0:
+                        logger.info(
+                            f"Found coordinates from address: '{row.get(addr_col)}' → ({lat}, {lon})")
+                        return (lat, lon)
+            except Exception:
+                pass
+
+            # 3) Exact/contains match by suburb
+            try:
+                sub_lower = self.charger_data[suburb_col].astype(
+                    str).str.lower()
+                mask = (sub_lower == location_clean) | sub_lower.str.contains(
+                    location_clean, na=False)
+                rows = self.charger_data[mask]
+                if not rows.empty:
+                    row = rows.iloc[0]
+                    lat = float(row.get(lat_col, 0))
+                    lon = float(row.get(lon_col, 0))
+                    if lat != 0 and lon != 0:
+                        logger.info(
+                            f"Found coordinates from suburb: '{row.get(suburb_col)}' → ({lat}, {lon})")
+                        return (lat, lon)
+            except Exception:
+                pass
+
+            # 4) Fuzzy match against combined candidates (name, address, suburb) within charger_data
+            try:
+                candidates = []
+                try:
+                    candidates.extend(self.charger_data[name_col].dropna().astype(
+                        str).str.lower().tolist())
+                except Exception:
+                    pass
+                try:
+                    candidates.extend(self.charger_data[addr_col].dropna().astype(
+                        str).str.lower().tolist())
+                except Exception:
+                    pass
+                try:
+                    candidates.extend(self.charger_data[suburb_col].dropna().astype(
+                        str).str.lower().tolist())
+                except Exception:
+                    pass
+
+                import difflib as _difflib
+                best = _difflib.get_close_matches(
+                    location_clean, list(set(candidates)), n=1, cutoff=0.6)
+                if best:
+                    best_str = best[0]
+                    mask = (
+                        self.charger_data[name_col].astype(
+                            str).str.lower() == best_str
+                    ) | (
+                        self.charger_data[addr_col].astype(
+                            str).str.lower() == best_str
+                    ) | (
+                        self.charger_data[suburb_col].astype(
+                            str).str.lower() == best_str
+                    )
+                    rows = self.charger_data[mask]
+                    if not rows.empty:
+                        row = rows.iloc[0]
+                        lat = float(row.get(lat_col, 0))
+                        lon = float(row.get(lon_col, 0))
                         if lat != 0 and lon != 0:
                             logger.info(
-                                f"Found coordinates for '{location_clean}' -> '{location_row.get('suburb')}': ({lat}, {lon})")
+                                f"Fuzzy-matched '{location_clean}' → '{best_str}' → ({lat}, {lon})")
                             return (lat, lon)
-                    except (ValueError, TypeError):
-                        pass
+            except Exception:
+                pass
+        except Exception:
+            pass
 
         logger.warning(
             f"Could not find coordinates for location: '{location_input}'")
         return None
 
-    def _get_location_variations(self, location_name: str) -> List[str]:
-        """Generate location name variations for better matching.
-
-        Uses fuzzy matching against known suburb lists from coordinates data if
-        available, otherwise falls back to suburbs present in the charger data.
-        """
-        variations: List[str] = [location_name]
-        try:
-            candidates: List[str] = []
-            if self.coordinates_data is not None and not self.coordinates_data.empty:
-                try:
-                    candidates = (
-                        self.coordinates_data['suburb']
-                        .dropna()
-                        .astype(str)
-                        .str.lower()
-                        .unique()
-                        .tolist()
-                    )
-                except Exception:
-                    candidates = []
-            if not candidates and self.charger_data is not None and not self.charger_data.empty:
-                try:
-                    candidates = (
-                        self.charger_data[DATA_CONFIG['CSV_COLUMNS']['SUBURB']]
-                        .dropna()
-                        .astype(str)
-                        .str.lower()
-                        .unique()
-                        .tolist()
-                    )
-                except Exception:
-                    candidates = []
-
-            if candidates:
-                close_matches = difflib.get_close_matches(
-                    location_name, candidates, n=5, cutoff=0.6
-                )
-                for match in close_matches:
-                    if match not in variations:
-                        variations.append(match)
-        except Exception:
-            # If fuzzy match fails for any reason, return the original only
-            return variations
-
-        return variations
+    """
+    Removed unused _get_location_variations.
+    """
 
     def _calculate_distance(self, point1: Tuple[float, float], point2: Tuple[float, float]) -> float:
         """Calculate distance between two points using Haversine formula"""
@@ -626,46 +674,34 @@ class ChargingStationDataService:
         radius = LOCATION_CONFIG['EARTH_RADIUS_KM']
         return radius * c
 
-    def _estimate_charging_cost(self, cost_str: str) -> str:
-        """Estimate charging cost for 80% charge using actual CSV data"""
-        try:
-            # Handle "Free" case
-            if 'free' in cost_str.lower():
-                return "Free charging"
-
-            # Extract numeric cost from Usage Cost column
-            numbers = re.findall(r'\d+\.?\d*', cost_str)
-            if numbers:
-                rate = float(numbers[0])
-                # Use configuration values for charge amount
-                min_kwh = CHARGING_CONFIG['MIN_CHARGE_AMOUNT']
-                max_kwh = CHARGING_CONFIG['MAX_CHARGE_AMOUNT']
-                charge_percentage = CHARGING_CONFIG['CHARGE_PERCENTAGE']
-                cost_margin = CHARGING_CONFIG['COST_MARGIN']
-
-                # Calculate cost range
-                min_cost = rate * min_kwh
-                max_cost = rate * max_kwh
-                max_cost_with_margin = max_cost * cost_margin
-
-                return f"${min_cost:.0f}-{max_cost_with_margin:.0f} for {charge_percentage*100:.0f}% charge"
-        except:
-            pass
-        return "Cost calculation not available"
-
     def _get_station_availability(self, lat: float, lon: float):
         """
         Thin wrapper to get EV charging station availability.
-        Returns: ("Yes" | "No" | "Unknown", updated_at)
+        Returns: (status_str, updated_at, data_dict_or_str)
         """
-        result = api_manager.get_charging_availability(lat, lon)
+        try:
+            result = api_manager.get_charging_availability(lat, lon)
 
-        if result["available"] is True:
-            return "Yes", result["updated_at"], result.get("data", {})
-        elif result["available"] is False:
-            return "No", result["updated_at"], result.get("data", {})
-        else:
-            return "Unknown", result["updated_at"], result.get("data", {})
+            if not isinstance(result, dict):
+                return "Unknown", None, "No structured availability payload returned."
+
+            status = "Unknown"
+            if result.get("available") is True:
+                status = "Yes"
+            elif result.get("available") is False:
+                status = "No"
+
+            updated_at = result.get("updated_at")
+
+            data = result.get("data", {})
+            if not isinstance(data, dict):
+                data = {"raw": data}
+
+            return status, updated_at, data
+
+        except Exception as e:
+            return "Unknown", None, f"Error fetching availability: {e}"
+
 
 # Global instance
 data_service = ChargingStationDataService()

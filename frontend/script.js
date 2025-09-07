@@ -64,6 +64,82 @@ function addMessage(text, sender = "bot") {
 }
 
 
+function addDirectionsCard(payload) {
+  const container = document.createElement("div");
+  container.classList.add("message", "bot");
+  container.innerHTML = `
+    <div><strong>🗺️ Directions</strong></div>
+    <div>${payload.origin} → ${payload.destination}</div>
+    <div>Distance: ${payload.distance_km != null ? payload.distance_km.toFixed(1) + ' km' : '—'} | ETA: ${payload.eta_min != null ? Math.round(payload.eta_min) + ' min' : '—'}${payload.delay_min ? ` (+${Math.round(payload.delay_min)} min traffic)` : ''}</div>
+    ${payload.maps_url ? `<div style="margin-top:6px"><a href="${payload.maps_url}" target="_blank" rel="noopener">Open in Google Maps</a></div>` : ''}
+  `;
+  chat.appendChild(container);
+
+  // instruction but not done
+  const steps = Array.isArray(payload.instructions)
+    ? payload.instructions
+    : (typeof payload.instructions === 'string' ? [payload.instructions] : []);
+  if (Array.isArray(steps) && steps.length) {
+    const list = document.createElement('ol');
+    list.style.margin = '6px 0 0 18px';
+    steps.slice(0, 8).forEach(step => {
+      const li = document.createElement('li');
+      li.textContent = step;
+      list.appendChild(li);
+    });
+    chat.appendChild(list);
+  }
+
+  // Scroll and persist
+  const timestamp = document.createElement("div");
+  timestamp.className = "timestamp";
+  timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  chat.appendChild(timestamp);
+  const chatContainer = document.getElementById("chat-container");
+  if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+  localStorage.setItem("chatHistory", chat.innerHTML);
+}
+
+function addTrafficCard(payload) {
+  const container = document.createElement("div");
+  container.classList.add("message", "bot");
+  const speedText = (payload.current_speed_kmh != null && payload.free_flow_speed_kmh != null)
+    ? ` | Speed: ${Math.round(payload.current_speed_kmh)} km/h (free-flow ${Math.round(payload.free_flow_speed_kmh)} km/h)`
+    : '';
+  const congestionText = payload.congestion_level != null ? ` | Level ${payload.congestion_level}` : '';
+  container.innerHTML = `
+    <div><strong>🚦 Traffic</strong></div>
+    <div>${payload.origin} → ${payload.destination}</div>
+    <div>Status: ${payload.status || 'Available'}${congestionText}${speedText}${payload.delay_min != null ? ` | Delay: ${Math.round(payload.delay_min)} min` : ''}</div>
+  `;
+  chat.appendChild(container);
+
+  const timestamp = document.createElement("div");
+  timestamp.className = "timestamp";
+  timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  chat.appendChild(timestamp);
+  const chatContainer = document.getElementById("chat-container");
+  if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+  localStorage.setItem("chatHistory", chat.innerHTML);
+}
+
+function handleRasaResponse(messages) {
+  messages.forEach((msg) => {
+    // Standard text
+    if (msg.text) addMessage(msg.text, "bot");
+
+    // Custom JSON payloads (Rasa REST channel: "custom" field)
+    const payload = msg.custom || msg.json_message || null;
+    if (!payload || typeof payload !== 'object') return;
+
+    if (payload.type === 'directions') {
+      addDirectionsCard(payload);
+    } else if (payload.type === 'traffic') {
+      addTrafficCard(payload);
+    }
+  });
+}
+
 
 
 async function getUserLocation() {
@@ -92,7 +168,7 @@ async function sendLocationToRasa() {
 
     const data = await response.json();
     if (data.length > 0) {
-      data.forEach((msg) => addMessage(msg.text, "bot"));
+      handleRasaResponse(data);
     }
   } catch (err) {
     console.error("Error sending location to Rasa:", err);
@@ -119,7 +195,7 @@ async function sendMessage(message) {
     if (data.length === 0) {
       addMessage("Sorry, I didn’t understand that.", "bot");
     } else {
-      data.forEach((msg) => addMessage(msg.text, "bot"));
+      handleRasaResponse(data);
     }
   } catch (err) {
     addMessage("Server error. Please try again.", "bot");

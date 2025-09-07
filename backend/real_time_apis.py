@@ -33,7 +33,6 @@ class ApiManager:
 
     def get_real_time_route(self, start_coords: Tuple[float, float], end_coords: Tuple[float, float]) -> Optional[Dict[str, Any]]:
         """Return route with traffic-aware summary.
-
         Coords are (lat, lon).
         """
         if not self._has_key():
@@ -48,6 +47,8 @@ class ApiManager:
                 'traffic': 'true',
                 'travelMode': 'car',
                 'instructionsType': 'text',
+                # Request polyline geometry when available
+                'routeRepresentation': 'polyline',
                 'key': self.api_key,
             }
             resp = requests.get(url, params=params,
@@ -72,12 +73,38 @@ class ApiManager:
             except Exception:
                 instructions = []
 
+            # Try to extract polyline points if provided
+            polyline: List[Tuple[float, float]] = []
+            try:
+                for leg in route.get('legs', []) or []:
+                    # TomTom legs may contain 'points' array with lat/lon
+                    pts = leg.get('points') or []
+                    for p in pts:
+                        lat = p.get('latitude') or p.get('lat')
+                        lon = p.get('longitude') or p.get('lon')
+                        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+                            polyline.append((float(lat), float(lon)))
+                    # Some responses may use 'shape' as list of "lat,lon" strings
+                    if not pts:
+                        shape = leg.get('shape') or []
+                        for s in shape:
+                            if isinstance(s, str) and ',' in s:
+                                try:
+                                    lat_str, lon_str = s.split(',', 1)
+                                    polyline.append(
+                                        (float(lat_str), float(lon_str)))
+                                except Exception:
+                                    continue
+            except Exception:
+                polyline = []
+
             return {
                 'source': 'tomtom',
                 'distance_km': distance_km,
                 'duration_minutes': duration_min,
                 'traffic_delay_minutes': delay_min,
                 'instructions': instructions,
+                'polyline': polyline if polyline else None,
             }
         except Exception:
             return None
@@ -87,18 +114,57 @@ class ApiManager:
 
         Coords are (lat, lon).
         """
-        # Use route summary to derive delay; TomTom traffic details API could be added later
+        # First, use route summary to derive delay
         route = self.get_real_time_route(start_coords, end_coords)
         if not route:
             return None
+
         estimated_delay_minutes = route.get('traffic_delay_minutes', 0)
-        # Speed metrics not available without traffic flow API; return N/A
+
+        # Then, try to enrich with TomTom Traffic Flow (absolute) speeds near route midpoint
+        current_speed_kmh: Optional[float] = None
+        free_flow_speed_kmh: Optional[float] = None
+        congestion_level: Optional[int] = None
+        try:
+            mid_lat = (float(start_coords[0]) + float(end_coords[0])) / 2.0
+            mid_lon = (float(start_coords[1]) + float(end_coords[1])) / 2.0
+            flow_url = f"{self.base_url}/traffic/services/4/flowSegmentData/absolute/10/json"
+            params = {
+                'point': f"{mid_lat},{mid_lon}",
+                'unit': 'KMPH',
+                'key': self.api_key,
+            }
+            resp = requests.get(flow_url, params=params,
+                                timeout=self.timeout_seconds)
+            resp.raise_for_status()
+            flow = resp.json()
+            fsd = (flow or {}).get('flowSegmentData') or {}
+            cs = fsd.get('currentSpeed')
+            ffs = fsd.get('freeFlowSpeed')
+            if isinstance(cs, (int, float)) and isinstance(ffs, (int, float)):
+                current_speed_kmh = float(cs)
+                free_flow_speed_kmh = float(ffs)
+                # Derive a simple congestion level from speed ratio
+                ratio = current_speed_kmh / \
+                    free_flow_speed_kmh if free_flow_speed_kmh and free_flow_speed_kmh > 0 else 1.0
+                if ratio >= 0.9:
+                    congestion_level = 0  # free-flow
+                elif ratio >= 0.7:
+                    congestion_level = 1  # light
+                elif ratio >= 0.5:
+                    congestion_level = 2  # moderate
+                else:
+                    congestion_level = 3  # heavy
+        except Exception:
+            # If flow API fails, keep speeds as None and continue
+            pass
+
         return {
             'source': 'tomtom',
             'traffic_status': 'Available',
-            'congestion_level': None,
-            'current_speed_kmh': None,
-            'free_flow_speed_kmh': None,
+            'congestion_level': congestion_level,
+            'current_speed_kmh': current_speed_kmh,
+            'free_flow_speed_kmh': free_flow_speed_kmh,
             'estimated_delay_minutes': estimated_delay_minutes,
         }
 
@@ -156,34 +222,10 @@ class ApiManager:
 
         return None
 
-    def geocode(self, query: str) -> Optional[Tuple[float, float]]:
-        """Resolve a free-form place/query to (lat, lon) using TomTom Geocoding.
-        Returns None if not found or key missing.
-        """
-        if not self._has_key() or not query:
-            return None
-        try:
-            url = f"{self.base_url}/search/2/geocode/{requests.utils.quote(query)}.json"
-            params = {
-                'key': self.api_key,
-                'limit': 1,
-            }
-            resp = requests.get(url, params=params,
-                                timeout=self.timeout_seconds)
-            resp.raise_for_status()
-            data = resp.json()
-            results = data.get('results') or []
-            if not results:
-                return None
-            pos = results[0].get('position') or {}
-            lat = pos.get('lat')
-            lon = pos.get('lon')
-            if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
-                return float(lat), float(lon)
-        except Exception:
-            return None
-        return None
-    
+    """
+    Removed unused geocode.
+    """
+
     def get_charging_availability(self, lat: float, lon: float) -> Dict[str, Any]:
         """
         Get basic availability of a charging station near given coordinates.
@@ -197,7 +239,7 @@ class ApiManager:
         """
         station_key = f"{lat:.4f},{lon:.4f}"
         api_key = "azlqdL59gO4rrlVHkqtjxy0L0SOI3W7l"
-        
+
         # --- Cache check ---
         if station_key in _station_cache:
             if _station_cache[station_key]["expiry"] > datetime.datetime.utcnow():
@@ -244,7 +286,8 @@ class ApiManager:
                 available = free_count > 0
                 updated_at = datetime.datetime.utcnow().isoformat()
 
-            result = {"available": available, "updated_at": updated_at, "data": avail_data}
+            result = {"available": available,
+                      "updated_at": updated_at, "data": avail_data}
 
             # --- Cache store (10 min TTL) ---
             _station_cache[station_key] = {
@@ -255,6 +298,7 @@ class ApiManager:
 
         except Exception as e:
             return {"available": None, "updated_at": None, "data": f"Exception: {e}"}
+
 
 # Global instance as expected by imports in Rasa actions
 api_manager = ApiManager()

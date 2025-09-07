@@ -14,7 +14,7 @@ class ConversationContexts:
     EMERGENCY_RESULTS = "emergency_results"
     PREFERENCE_RESULTS = "preference_results"
     STATION_DETAILS = "station_details"
-    # Ephemeral contexts used by follow-up handler (optional)
+
     GETTING_DIRECTIONS = "getting_directions"
     COMPARING_STATIONS = "comparing_stations"
     CHECKING_AVAILABILITY = "checking_availability"

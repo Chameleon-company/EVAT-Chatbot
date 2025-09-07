@@ -19,9 +19,9 @@ except ImportError as e:
 
 # access CSV-backed coordinates through data_service
 try:
-    from .data_service import data_service  
+    from .data_service import data_service
 except Exception:
-    data_service = None  
+    data_service = None
 
 
 class RealTimeIntegrationManager:
@@ -45,7 +45,6 @@ class RealTimeIntegrationManager:
             if data_service is not None:
                 coords = data_service._get_location_coordinates(location_name)
                 if coords and isinstance(coords, tuple) and len(coords) == 2:
-                    # data_service returns (lat, lon)
                     return coords  # type: ignore
 
             return None
@@ -75,7 +74,7 @@ class RealTimeIntegrationManager:
                     'distance_km': route_info.get('distance_km', 0),
                     'duration_minutes': route_info.get('duration_minutes', 0),
                     'traffic_delay_minutes': route_info.get('traffic_delay_minutes', 0),
-                    'route_instructions': route_info.get('instructions', []),
+                    'instructions': route_info.get('instructions', []),
                     'data_source': 'Real-time TomTom API'
                 }
 
@@ -85,31 +84,9 @@ class RealTimeIntegrationManager:
             self.logger.error(f"Error getting route with traffic: {e}")
             return None
 
-    def get_stations_with_real_time_data(self, location: str, radius_km: float = 15.0) -> List[Dict[str, Any]]:
-        """Get charging stations with real-time availability and traffic data"""
-        if not self.is_available():
-            return []
-
-        try:
-            # Get user location coordinates
-            user_coords = self.get_user_location(location)
-            if not user_coords:
-                return []
-
-            # Get real-time charging station data
-            station_data = self.api_manager.get_charging_station_real_time_data(
-                user_coords[0], user_coords[1], radius_km
-            )
-
-            if station_data and station_data.get('source') == 'tomtom':
-                return self._format_real_time_stations(station_data)
-
-            return []
-
-        except Exception as e:
-            self.logger.error(
-                f"Error getting stations with real-time data: {e}")
-            return []
+    """
+    Removed unused get_stations_with_real_time_data.
+    """
 
     def get_traffic_conditions(self, start_location: str, end_location: str) -> Optional[Dict[str, Any]]:
         """Get real-time traffic conditions for a route"""
@@ -144,30 +121,9 @@ class RealTimeIntegrationManager:
 
     # Weather integration removed
 
-    def _format_real_time_stations(self, station_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Format real-time station data for display"""
-        stations = []
-
-        try:
-            for station in station_data.get('stations', []):
-                formatted_station = {
-                    'name': station.get('name', 'Unknown Station'),
-                    'address': station.get('address', 'Address not available'),
-                    'power': station.get('power_kw', 'Power not available'),
-                    'cost': station.get('cost_per_kwh', 'Cost not available'),
-                    'points': station.get('available_points', 'Points not available'),
-                    'distance_km': station.get('distance_km', 0),
-                    'real_time_available': station.get('available_connectors', 0),
-                    'real_time_total': station.get('total_connectors', 0),
-                    'real_time_speed': station.get('charging_speed', 'Unknown'),
-                    'data_source': 'Real-time TomTom API'
-                }
-                stations.append(formatted_station)
-
-        except Exception as e:
-            self.logger.error(f"Error formatting real-time stations: {e}")
-
-        return stations
+    """
+    Removed unused _format_real_time_stations.
+    """
 
     def get_enhanced_route_planning(self, start_location: str, end_location: str) -> Dict[str, Any]:
         """Get comprehensive route planning with real-time data"""

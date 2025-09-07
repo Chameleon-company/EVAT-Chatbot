@@ -196,60 +196,25 @@ nlu:
 
 - intent: route_station_selection
   examples: |
-    - let's go with [station_name]
-    - i'll go with [station_name]
-    - i will go with [station_name]
-    - i choose [station_name]
-    - i select [station_name]
-    - show me [station_name]
-    - tell me about [station_name]
-    - give me details for [station_name]
-    - i want [station_name]
-    - i'd like [station_name]
-    - i would like [station_name]
-    - [station_name] please
-    - [station_name] station
-    - the [station_name] station
-    - select [station_name]
-    - choose [station_name]
-    - pick [station_name]
-    - go with [station_name]
-    - i'll take [station_name]
-    - i want to go to [station_name]
-    - i'd like to go to [station_name]
-    - i go with [station_name]
-    - i will go with [station_name]
-    - i'll go with [station_name]
-    - i would like to go to [station_name]
-    - can you show me [station_name]
-    - details for [station_name]
-    - information about [station_name]
-    - [station_name] details
-    - [station_name] information
-    - show me [Malvern Central](station_name)
-    - tell me about [Malvern Central](station_name)
+    - [station_name]
     - [Malvern Central](station_name)
-    - show me [Lynbrook Village](station_name)
-    - tell me about [Lynbrook Village](station_name)
     - [Lynbrook Village](station_name)
-    - show me [RMIT - City Campus](station_name)
     - [RMIT - City Campus](station_name)
-    - show me [ENGIE - Victoria Gardens](station_name)
     - [ENGIE - Victoria Gardens](station_name)
-    - show me [Swinburne University - TC Building](station_name)
     - [Swinburne University - TC Building](station_name)
-    - show me [Camberwell Supercharger](station_name)
     - [Camberwell Supercharger](station_name)
-    - show me [Chadstone Shopping Centre](station_name)
     - [Chadstone Shopping Centre](station_name)
-    - show me [Tesla Supercharger South Melbourne](station_name)
     - [Tesla Supercharger South Melbourne](station_name)
-    - show me [High Street](station_name)
     - [High Street](station_name)
-    - show me [Evie Portland](station_name)
     - [Evie Portland](station_name)
-    - show me [North Bellarine Aquatic Centre](station_name)
     - [North Bellarine Aquatic Centre](station_name)
+    - Collingwood Library
+    - Monash Caufield
+    - ENGIE - Chadstone 2
+    - Engie - The Glen
+    - Bayside Gateway
+    - Tesla Supercharger Brighton East
+    - Chargefox - Barnawartha North
 
 # Enhanced preference filtering intent from PR-1
 - intent: filter_by_preferences
@@ -364,39 +329,11 @@ nlu:
 
 - intent: emergency_station_selection
   examples: |
-    - emergency station [station_name]
-    - urgent charging at [station_name]
-    - emergency stop at [station_name]
-    - critical charging [station_name]
-    - battery low need [station_name]
-    - urgent need [station_name]
-    - emergency [station_name] please
-    - critical [station_name] station
-    - emergency charging [station_name]
-    - urgent [station_name] please
-    - battery critical [station_name]
-    - need [station_name] now
-    - emergency stop [station_name]
-    - urgent charging [station_name]
-    - critical need [station_name]
+    - [station_name]
 
 - intent: preference_station_selection
   examples: |
-    - preference match [station_name]
-    - preferred station [station_name]
-    - best match [station_name]
-    - ideal station [station_name]
-    - perfect fit [station_name]
-    - matches preferences [station_name]
-    - preferred choice [station_name]
-    - best option [station_name]
-    - ideal choice [station_name]
-    - perfect match [station_name]
-    - preference fit [station_name]
-    - best preference [station_name]
-    - ideal preference [station_name]
-    - perfect preference [station_name]
-    - preference choice [station_name]
+    - [station_name]
     - [Swinburne University - TC Building]
     - [Monash Caufield]
     - [RACV Solar Grovedale]
@@ -416,6 +353,8 @@ nlu:
     - [ENGIE - Chadstone]
     - [North Bellarine Aquatic Centre]
     - [High Street]
+    - [Engie - The Glen]
+    - [Bayside Gateway]
     - [bp pulse Dandenong North]
     - Swinburne University - TC Building
     - Monash Caufield
@@ -426,6 +365,12 @@ nlu:
     - ENGIE - Chadstone
     - North Bellarine Aquatic Centre
     - High Street
+    - Fleming Park
+    - Monash Caufield
+    - Exploren Charging Station
+    - Mont Albert
+    - Engie - The Glen
+    - Tesla Supercharger Brighton East
     - bp pulse Dandenong North
     - i prefer [Swinburne University - TC Building]
     - i prefer [Monash Caufield]
@@ -607,3 +552,66 @@ nlu:
     - High Street
     - Evie Portland
     - North Bellarine Aquatic Centre
+    - 100 St Kilda Road
+    - Collingwood Library
+    - Exploren Charging Station
+    - Fleming Park
+    - Monash Caufield
+    - Mont Albert
+    - Exploren Charging Station
+    - ENGIE - Chadstone 2
+    - Engie - The Glen
+    - Bayside Gateway
+    - Tesla Supercharger Brighton East
+    - Chargefox - Barnawartha North
+    - Chargefox - Euroa
+    - 11 Nicholson Street
+    - Lorbek Luxury Cars
+    - JET Charge Office
+    - Evie Richmond Library
+    - Woolworths Fishermans Bend
+    - Middy's Port Melbourne
+    - Ampcharge Barkly Square
+    - GET Electric Head Office
+    - Brunswick EV Hub
+    - David Street Car Park
+    - RMIT Brunswick
+    - The Parade Ascot Vale Car Park
+    - Moonee Ponds Central
+    - St Kilda Town Hall
+    - City of Stonnington
+    - Coburg Civic Centre / Moreland City
+    - Coburg Town Hall / Moreland City
+    - Austin Tower Carpark Level B1
+    - Coburg North EV Fast Charge
+    - Oak Park Sports & Aquatic Centre
+    - Toyota Altona
+    - CB Smith Reserve
+    - Hobsons Bay Civic Centre
+    - Chargefox Airport West
+    - Tesla Supercharger Campbellfield
+    - Ampol Foodary Altona North
+    - Bridge Street
+    - Tesla Supercharger Box Hill
+    - Evie Glen Gala Village
+    - Keilor Central
+    - Tesla Supercharger Oakleigh Repair Centre
+    - Bayside Council
+    - Jolt Cheltenham
+    - Uni Hill Town Centre
+    - Greensborough Plaza
+    - Watermarc Carpark (LG)
+    - Brimbank Shopping Centre
+    - Southland Medical Centre
+    - Research Way - N1 Carpark monash
+    - Ampol Derrimut
+    - Jolt Black Rock
+    - BP Northpoint
+    - Eltham Leisure Centre
+    - BP pulse Diamond Creek
+    - BP Pulse
+    - Shell Coles Express Taylors Lakes
+    - Watergardens Shopping Centre
+    - Point Cook Town Centre
+    - Red Rooster Vermont
+    - Greenvale Woolworths
