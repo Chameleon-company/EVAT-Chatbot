@@ -158,23 +158,38 @@ body{
   padding:10px 12px;
 }
 
-/* Chips */
-.chips{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:10px;
+/* Chips row container */
+.chips {
+  display: flex;
+  gap: 8px;              /* adds spacing between chips */
+  flex-wrap: wrap;       /* allows wrapping if too many */
+  margin-top: 10px;      /* space above chips row */
 }
-.chip{
-  border:1px solid rgba(0,0,0,.1);
-  background:#fff;
-  padding:6px 12px;
-  border-radius:999px;
-  cursor:pointer;
-  user-select:none;
-  box-shadow:var(--shadow);
+
+/* Each chip button */
+.chip {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #111827;
+  padding: 6px 14px;
+  border-radius: 999px;  /* pill shape */
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  display: inline-flex;  /* keep text centered */
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;   /* prevent text from breaking */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: background .2s, border-color .2s;
 }
-.chip:hover{ filter:brightness(.98) }
+
+.chip:hover {
+  background: #f9fafb;
+  border-color: #94a3b8;
+}
+
 
 /* Composer */
 /* Composer wrapper */
@@ -227,6 +242,37 @@ button{
   color:#fff;
   transition:background .2s, transform .1s;
 }
+
+/* Override global button sizing so chips & station buttons size naturally */
+.btn-send, .btn-clear {
+  width: 42px;
+  height: 42px;
+}
+
+button:not(.btn-send):not(.btn-clear) {
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure chips render text inside the pill, not outside */
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  white-space: nowrap;      /* keep label inside the pill */
+  font-size: 14px;
+  font-weight: 500;
+}
+
 button:active{ transform:scale(0.95); }
 
 /* Send button */
@@ -287,212 +333,6 @@ button:active{ transform:scale(0.95); }
   .app-title{ font-size:22px }
 }
 
-/* ---------- Station cards (target look) ---------- */
-
-/* make the bot bubble fully wide & clean for cards */
-.bubble.station-wrap{
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-  max-width: 100%;
-}
-
-.station-list{
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-}
-
-/* Card shell */
-.station-card{
-  position: relative;
-  width: 100%;
-  background: #fff;
-  border: 1px solid rgba(0,0,0,.08);
-  box-shadow: 0 2px 10px rgba(0,0,0,.06);
-  border-radius: 18px;
-  padding: 18px 20px;
-  display: grid;
-  grid-template-columns: 56px 1fr;   /* icon | content */
-  column-gap: 16px;
-  align-items: start;
-}
-
-/* Left icon tile */
-.station-icon{
-  width: 56px; height: 56px;
-  border-radius: 14px;
-  background: var(--brand);
-  color: #fff;
-  display: grid; place-items: center;
-  font-size: 22px;
-}
-
-/* Right content */
-.station-main{ display: grid; gap: 10px; }
-
-/* Top row: name + badge pinned to top-right */
-.station-top{
-  display: grid;
-  grid-template-columns: 1fr auto;  /* name | badge */
-  align-items: center;
-  gap: 12px;
-}
-
-.station-name{
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.15;
-}
-
-.station-address{
-  color: #475569;
-  font-size: 14px;
-}
-
-/* Availability badge styles + placement */
-.station-badge{
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid;
-  line-height: 1;
-}
-.station-badge.available{ background:#eafaf3; color:#178a53; border-color:#b6ebd0; }
-.station-badge.busy{      background:#fdeaea; color:#c2410c; border-color:#f5c2c0; }
-.station-badge.unknown{   background:#f1f5f9; color:#334155; border-color:#cbd5e1; }
-
-/* Meta row: Distance | Cost | Power (single line, aligned) */
-.station-meta{
-  display: grid;
-  grid-template-columns: 160px 1fr 140px; /* tweak numbers if needed */
-  gap: 16px;
-  align-items: start;
-}
-
-.kv .label{ font-size: 12px; color:#64748b; margin-bottom: 2px; }
-.kv .value{ font-weight: 700; color:#0b1f27; }
-.kv .value.emphasize{ color:#10b981; }   /* green like Send button */
-.kv.power{ text-align: right; }
-
-/* Actions (Get Directions) */
-.station-actions{ margin-top: 10px; }
-.btn-primary{
-  background:#10b981;
-  color:#fff;
-  border:0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;         /* <- prevents the “Get Direc…” wrap */
-  cursor: pointer;
-  transition: filter .15s;
-}
-.btn-primary:hover{ filter: brightness(.95); }
-
-/* Responsive tune-up */
-@media (max-width: 900px){
-  .station-meta{ grid-template-columns: 1fr 1fr; }
-  .kv.power{ text-align: left; }
-}
-
-/* Scope the fixed-size buttons ONLY to the composer controls */
-.btn-send, .btn-clear{
-  width:42px;
-  height:42px;
-}
-
-/* Make all other buttons size naturally (chips, station buttons, etc.) */
-button:not(.btn-send):not(.btn-clear){
-  width:auto;
-  height:auto;
-}
-
-/* Overwrite base .bubble styles for station list */
-.message-row .bubble.station-wrap{
-  background:transparent !important;
-  box-shadow:none !important;
-  padding:0 !important;
-  max-width:100%;
-}
-
-/* List */
-.station-list{ display:flex; flex-direction:column; gap:16px; width:100%; }
-
-/* Card shell */
-.station-card{
-  position:relative;
-  width:100%;
-  background:#fff;
-  border:1px solid rgba(0,0,0,.08);
-  box-shadow:0 2px 10px rgba(0,0,0,.06);
-  border-radius:18px;
-  padding:20px 24px;
-  display:grid;
-  grid-template-columns:56px 1fr; /* icon | content */
-  column-gap:16px;
-  align-items:start;
-}
-
-/* Icon tile */
-.station-icon{
-  width:56px; height:56px;
-  border-radius:14px;
-  background:var(--brand);
-  color:#fff;
-  display:grid; place-items:center;
-  font-size:22px;
-}
-
-/* Content column */
-.station-main{ display:grid; gap:10px; }
-
-/* Title row + availability at top-right */
-.station-top{
-  display:grid;
-  grid-template-columns:1fr auto; /* name | badge */
-  align-items:center;
-  gap:12px;
-}
-.station-name{ font-weight:700; color:#0f172a; line-height:1.15; }
-.station-address{ color:#475569; font-size:14px; }
-
-/* Availability pill */
-.station-badge{
-  font-size:12px; padding:6px 10px;
-  border-radius:999px; border:1px solid; line-height:1;
-}
-.station-badge.available{ background:#eafaf3; color:#178a53; border-color:#b6ebd0; }
-.station-badge.busy{      background:#fdeaea; color:#c2410c; border-color:#f5c2c0; }
-.station-badge.unknown{   background:#f1f5f9; color:#334155; border-color:#cbd5e1; }
-
-/* Meta row: Distance | Cost | Power */
-.station-meta{
-  display:grid;
-  grid-template-columns:160px 1fr 140px;
-  gap:16px; align-items:start; margin-top:2px;
-}
-.kv .label{ font-size:12px; color:#64748b; margin-bottom:2px; }
-.kv .value{ font-weight:700; color:#0b1f27; }
-.kv .value.emphasize{ color:#10b981; }
-.kv.power{ text-align:right; }
-
-/* Get Directions button (prevent wrapping) */
-.station-actions{ margin-top:10px; }
-.station-card .btn-primary{
-  background:#10b981; color:#fff; border:0; border-radius:10px;
-  padding:10px 14px; font-weight:600;
-  display:inline-flex; align-items:center; justify-content:center;
-  white-space:nowrap;                     /* <- no wrap */
-  width:auto; height:auto;                /* <- override global */
-  cursor:pointer; transition:filter .15s;
-}
-.station-card .btn-primary:hover{ filter:brightness(.95); }
-
 /* Mobile */
 @media (max-width:900px){
   .station-meta{ grid-template-columns:1fr 1fr; }
@@ -520,9 +360,9 @@ button:not(.btn-send):not(.btn-clear){
 
 /* Center the button horizontally inside the card */
 .station-actions{
-  margin-top: 18px;
+  margin-top: 12px;      /* or keep 18px if you prefer the spacing */
   display:flex;
-  justify-content:center;   /* center horizontally */
+  justify-content:flex-start;
 }
 
 /* --- Station-card refinements --- */
@@ -559,3 +399,146 @@ button:not(.btn-send):not(.btn-clear){
   font-size: var(--station-btn-size);
   padding: 10px 18px;           /* reduce padding to match new size */
 }
+
+/* Hide all message timestamps */
+.timestamp{ display:none !important; }
+
+/* Map card inside bot bubble */
+.map-card {
+  margin: 12px 0;
+  text-align: center;
+}
+
+.btn-map {
+  display: inline-block;
+  background: #10b981;        /* teal */
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;       /* pill look */
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-map:hover {
+  background: #059669;
+  transform: scale(1.05);
+}
+
+/* ===== Station cards: full-width inside chat bubble ===== */
+.message-row .bubble.station-wrap{
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* ===== Card shell (target look) ===== */
+.station-card{
+  position: relative;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #E5E7EB;               /* subtle border */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);   /* lighter shadow */
+  border-radius: 16px;                      /* tighter radius */
+  padding: 16px 20px;                       /* compact padding */
+  display: grid;
+  grid-template-columns: 56px 1fr;          /* icon | content */
+  column-gap: 12px;
+  align-items: start;
+}
+
+/* Icon tile */
+.station-icon{
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  display: grid; place-items: center;
+  font-size: 22px;
+  align-self: top;             /* NEW: centers icon against name+address */
+}
+
+/* Right column (content) */
+.station-main{ display: grid; gap: 10px; }
+
+/* Top row: title (left) + availability badge (right) */
+.station-top{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  align-items: flex-start;   /* NEW: text aligns to top with the icon */
+}
+
+.station-top > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;  /* aligns name+address with logo */
+}
+
+/* Typography: left-aligned title & address */
+.station-name{
+  font-weight: 700;
+  font-size: 18px;
+  color: #0f172a;
+  line-height: 1.05;     /* tighter */
+}
+
+.station-address{
+  color: #475569;
+  font-size: 14px;
+  margin-top: 6px;      /* pulls closer to name */
+  line-height: 1.15;     /* slightly tighter */
+}
+
+.station-badge{
+  font-size: 12px;
+  padding: 3px 5px;
+  border-radius: 999px;
+  border: 1px solid;
+  line-height: 1;
+}
+.station-badge.available{ background:#eafaf3; color:#178a53; border-color:#b6ebd0; }
+.station-badge.busy{      background:#fdeaea; color:#c2410c; border-color:#f5c2c0; }
+.station-badge.unknown{   background:#f1f5f9; color:#334155; border-color:#cbd5e1; }
+
+/* 3-column metrics row (compact like target) */
+.station-meta{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;  /* equal thirds */
+  gap: 16px;
+  align-items: center;
+  font-size: 14px;
+  color: #1e293b;
+  text-align: center;                  /* centers text in each column */
+}
+.kv:first-child {
+  text-align: left;      /* Distance aligns with name/address */
+}
+.kv .label{ font-size: 12px; color:#64748b; margin-bottom: 2px; }
+.kv .value{ font-weight: 700; color:#0b1f27; }
+.kv .value.emphasize{ color:#10b981; }   /* green for price */
+.kv.power{ text-align: right; }
+
+/* Button area */
+.station-actions{ margin-top: 0px; }
+
+/* Get Directions button (pill look) */
+.station-card .btn-primary{
+  background: #10b981;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(16,185,129,0.20);
+  transition: background .2s, transform .1s;
+}
+.station-card .btn-primary:hover{
+  background: #059669;
+  transform: translateY(-1px);
+}
+

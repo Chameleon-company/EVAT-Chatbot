@@ -11,6 +11,7 @@ let userLocation = null;
 // Auto-resize config for textarea
 let baseInputHeight = null;           // single-line height in px
 const MAX_INPUT_HEIGHT = 120;         // cap growth
+let showFcpChips = false; // controls showing Fastest/Cheapest/Premium chips
 
 /* ---------- Station card helpers ---------- */
 function formatDistance(km) {
@@ -57,36 +58,41 @@ function addStationCards(stations = [], opts = {}) {
     const card = document.createElement("div");
     card.className = "station-card";
     card.innerHTML = `
-      <div class="station-icon">⚡</div>
-      <div class="station-main">
-        <div class="station-top">
-          <div>
-            <div class="station-name">${s.name || "Unnamed station"}</div>
-            <div class="station-address">${s.address || ""}</div>
-          </div>
-          ${opts.show_availability ? `<span class="station-badge ${badge.cls}">${badge.txt}</span>` : ""}
-        </div>
+  <div class="station-icon">⚡</div>
 
-        <div class="station-meta">
-          <div class="kv">
-            <div class="label">Distance</div>
-            <div class="value">${fmtDist(s.distance_km)}</div>
-          </div>
-          <div class="kv">
-            <div class="label">Cost</div>
-            <div class="value emphasize">${s.cost || "—"}</div>
-          </div>
-          <div class="kv">
-            <div class="label">Power</div>
-            <div class="value">${s.power != null ? `${s.power} kW` : "—"}</div>
-          </div>
-        </div>
-
-        <div class="station-actions">
-          <button type="button" class="btn-primary station-directions" data-id="${s.station_id}">Get Directions</button>
-        </div>
+  <div class="station-main">
+    <div class="station-top">
+      <div>
+        <div class="station-name">${s.name || "Unnamed station"}</div>
+        <div class="station-address">${s.address || ""}</div>
       </div>
-    `;
+      ${opts.show_availability
+        ? `<span class="station-badge ${badge.cls}">${badge.txt}</span>`
+        : ""}
+    </div>
+
+    <div class="station-meta">
+      <div class="kv">
+        <div class="label">Distance</div>
+        <div class="value">${fmtDist(s.distance_km)}</div>
+      </div>
+      <div class="kv">
+        <div class="label">Cost</div>
+        <div class="value emphasize">${s.cost || "—"}</div>
+      </div>
+      <div class="kv power">
+        <div class="label">Power</div>
+        <div class="value">${s.power != null ? `${s.power} kW` : "—"}</div>
+      </div>
+    </div>
+
+    <div class="station-actions">
+      <button type="button"
+              class="btn-primary station-directions"
+              data-id="${s.station_id}">Get Directions</button>
+    </div>
+  </div>
+`;
     list.appendChild(card);
   });
 
@@ -121,6 +127,14 @@ const scrollToBottom = () => {
 const timestamp = () =>
   new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+/* ---------- Basic sanitizer for bot text ---------- */
+function sanitize(html) {
+  // strip <script>...</script> and inline on* handlers
+  return String(html)
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/\son\w+="[^"]*"/gi, "");
+}
+
 /* ---------- Message rendering with avatars ---------- */
 function addMessage(text, sender = "bot") {
   const row = document.createElement("div");
@@ -132,7 +146,9 @@ function addMessage(text, sender = "bot") {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.innerHTML = text;
+  // Strip markdown-style bold (**text**) before rendering
+const cleanText = text.replace(/\*\*(.*?)\*\*/g, "$1");
+bubble.innerHTML = sanitize(cleanText);
 
   const ts = document.createElement("span");
   ts.className = "timestamp";
@@ -157,6 +173,20 @@ function addMessage(text, sender = "bot") {
   ) {
     addChips(["1", "2", "3"]);
   }
+  // Arm the F/C/P chips only when the bot asks the actual question
+  if (sender === "bot" && /what'?s\s+most\s+important\s+to\s+you/i.test(text)) {
+    showFcpChips = true;
+  }
+    // Add inline chips for Fastest/Cheapest/Premium — only once per prompt
+  if (
+    sender === "bot" &&
+    showFcpChips &&
+    /fastest|cheapest|premium/i.test(text) &&
+    !/1.*2.*3/.test(text)
+  ) {
+    addChips(["Cheapest", "Fastest", "Premium"]);
+    showFcpChips = false;  // prevent re-showing on follow-up bot messages
+  }
 }
 
 function addChips(options) {
@@ -179,11 +209,11 @@ function addChips(options) {
     chip.className = "chip";
     chip.textContent = opt;
     chip.addEventListener("click", () => {
-      addMessage(opt, "user");
-      sendMessage(opt);
-      // remove chips row after click
-      row.remove();
-    });
+  showFcpChips = false;        // ensure we don't show them again on the next bot line
+  addMessage(opt, "user");
+  sendMessage(opt);
+  row.remove();                 // remove the chips row after click
+  });
     chips.appendChild(chip);
   });
 
@@ -235,10 +265,21 @@ function addDirectionsCard(payload) {
     } | ETA: ${
     payload.eta_min != null ? Math.round(payload.eta_min) + " min" : "—"
   }${payload.delay_min ? ` (+${Math.round(payload.delay_min)} min traffic)` : ""}</div>
-    ${
-      payload.maps_url
-        ? `<div style="margin-top:6px"><a href="${payload.maps_url}" target="_blank" rel="noopener">Open in Google Maps</a></div>`
-        : ""
+    ${payload.maps_url ? `
+  <div class="map-card">
+    <iframe
+      src="${payload.maps_url}&output=embed"
+      width="100%"
+      height="200"
+      style="border:0; border-radius:10px;"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+    <div style="margin-top:6px; text-align:center">
+      <a href="${payload.maps_url}" target="_blank" rel="noopener" class="btn-map">Open in Google Maps</a>
+    </div>
+  </div>` : ""}
     }
     ${
       steps.length
@@ -272,30 +313,19 @@ function addTrafficCard(payload) {
 function handleRasaResponse(messages) {
   messages.forEach((msg) => {
     if (msg.text) addMessage(msg.text, "bot");
-    const payload = msg.custom || msg.json_message || null;
-    if (!payload || typeof payload !== "object") return;
-    if (payload.type === "directions") addDirectionsCard(payload);
-    else if (payload.type === "traffic") addTrafficCard(payload);
-  });
-}
-
-function handleRasaResponse(messages) {
-  messages.forEach((msg) => {
-    if (msg.text) addMessage(msg.text, "bot");
 
     const payload = msg.custom || msg.json_message || null;
     if (!payload || typeof payload !== "object") return;
 
-    if (payload.type === 'directions') {
+    if (payload.type === "directions") {
       addDirectionsCard(payload);
-    } else if (payload.type === 'traffic') {
+    } else if (payload.type === "traffic") {
       addTrafficCard(payload);
     } else if (Array.isArray(payload.stations)) {
-  addStationCards(payload.stations, { show_availability: !!payload.show_availability });
-  }
+      addStationCards(payload.stations, { show_availability: !!payload.show_availability });
+    }
   });
 }
-
 
 /* ---------- Geolocation + init ---------- */
 async function getUserLocation() {
@@ -324,9 +354,22 @@ function persist() {
   localStorage.setItem("chatHistory", chat.innerHTML);
 }
 
+function attachStationDirectionsHandlers() {
+  document.querySelectorAll(".station-directions").forEach((btn) => {
+    if (btn.dataset.bound) return;       // avoid duplicate binding
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const sid = btn.getAttribute("data-id");
+      addMessage("Get Directions", "user");
+      sendMessage(`/get_directions{"station_id":"${sid}"}`);
+    });
+  });
+}
+
 window.onload = async () => {
   const stored = localStorage.getItem("chatHistory");
   if (stored) chat.innerHTML = stored;
+  attachStationDirectionsHandlers();
 
   // measure single-line height once
   userInput.style.height = 'auto';
