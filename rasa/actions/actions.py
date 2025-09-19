@@ -43,6 +43,97 @@ def format_station_list(stations: List[Dict[str, Any]], limit: int = 5, show_ind
     return "\n".join(lines)
 
 
+def _map_station_for_ui(station: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert internal station dict to frontend card schema.
+
+    Required keys:
+    - station_id: string
+    - name: string
+    - address: string
+    - distance_km: number (float)
+    - cost: string
+    - power: number or None
+    - availability: one of {"yes","no","busy","available"}
+    """
+    # Station ID: prefer provided IDs; fallback to lat/lon or name
+    sid = station.get("station_id") or station.get("id") or station.get("ID")
+    if not sid:
+        lat = station.get("latitude")
+        lon = station.get("longitude")
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+            sid = f"{lat},{lon}"
+        else:
+            sid = station.get("name") or "station"
+
+    name = station.get("name") or "Unknown station"
+    address = station.get("address", "")
+
+    # Distance: prefer distance_km; else min(distance_from_start, distance_from_end)
+    dist = station.get("distance_km")
+    if not isinstance(dist, (int, float)):
+        candidates: List[float] = []
+        for k in ("distance_from_start", "distance_from_end"):
+            v = station.get(k)
+            if isinstance(v, (int, float)):
+                candidates.append(float(v))
+        dist = min(candidates) if candidates else 0.0
+
+    # Power: parse first number
+    power_val = None
+    p = station.get("power")
+    if isinstance(p, (int, float)):
+        power_val = int(p)
+    elif p is not None:
+        import re as _re
+        nums = _re.findall(r"\d+\.?\d*", str(p))
+        if nums:
+            try:
+                power_val = int(float(nums[0]))
+            except Exception:
+                power_val = None
+
+    cost = station.get("cost") or "—"
+
+    # Availability mapping
+    availability = station.get("availability")
+    availability_str: str
+    if isinstance(availability, str):
+        val = availability.strip().lower()
+        if val in {"yes", "no", "busy", "available"}:
+            availability_str = val
+        else:
+            availability_str = "available"
+    elif isinstance(availability, bool):
+        availability_str = "yes" if availability else "no"
+    else:
+        availability_str = "available"
+
+    return {
+        "station_id": str(sid),
+        "name": name,
+        "address": address,
+        "distance_km": float(dist if isinstance(dist, (int, float)) else 0.0),
+        "cost": str(cost),
+        "power": power_val,
+        "availability": availability_str,
+    }
+
+
+def _send_station_cards(dispatcher: CollectingDispatcher, stations: List[Dict[str, Any]], limit: int = 10) -> None:
+    """Send stations to frontend in the expected custom payload schema."""
+    try:
+        mapped = [_map_station_for_ui(
+            s) for s in stations[:limit] if isinstance(s, dict)]
+        if mapped:
+            dispatcher.utter_message(json_message={
+                "stations": mapped,
+                "show_availability": True,
+            })
+    except Exception:
+        # Non-fatal if UI payload fails
+        pass
+
+
 class ActionCollectInitialLocation(Action):
     def name(self) -> Text:
         return "action_collect_initial_location"
@@ -65,7 +156,6 @@ class ActionCollectInitialLocation(Action):
         user_lng = tracker.latest_message.get('metadata', {}).get('lng')
 
         if user_lat and user_lng:
-            # GPS coordinates available, show the main menu
             dispatcher.utter_message(
                 text="✅ **Location detected!** Now I can help you find the best charging options.\n\n"
                      "Please select an option:\n\n"
@@ -96,7 +186,7 @@ class ActionCollectInitialLocation(Action):
                                  "1. 🗺️ **Route Planning** - Plan charging stops for your journey\n"
                                  "2. 🚨 **Emergency Charging** - Find nearest stations when battery is low\n"
                                  "3. ⚡ **Charging Preferences** - Find stations by your preferences\n\n"
-                                 "**🎯 Type 1, 2, or 3 to continue!**")
+                            "**🎯 Type 1, 2, or 3 to continue!**")
 
                         return [
                             SlotSet("user_lat", lat),
@@ -302,6 +392,7 @@ class ActionHandleMenuSelection(Action):
                     start_location, end_location)
 
                 if stations:
+                    _send_station_cards(dispatcher, stations, limit=10)
                     response = f"🎯 **Route Confirmed:** {start_location} → {end_location}\n\n"
                     response += f"Found {len(stations)} charging stations along your route:\n\n"
 
@@ -481,6 +572,7 @@ class ActionHandleRouteInput(Action):
                         start_location, end_location)
 
                     if stations:
+                        _send_station_cards(dispatcher, stations, limit=10)
                         response = f"🎯 **Route Confirmed:** {start_location} → {end_location}\n\n"
                         response += f"Found {len(stations)} charging stations along your route:\n\n"
 
@@ -612,6 +704,7 @@ class ActionHandleRouteInput(Action):
                 start_location, end_location)
 
             if stations:
+                _send_station_cards(dispatcher, stations, limit=10)
                 response = f"🎯 **Route Confirmed:** {start_location} → {end_location}\n\n"
                 response += f"Found {len(stations)} charging stations along your route:\n\n"
 
@@ -1018,6 +1111,7 @@ class ActionHandleEmergencyLocationInput(Action):
         stations = data_service.get_emergency_stations(current_location)
 
         if stations:
+            _send_station_cards(dispatcher, stations, limit=5)
             response = f"🚨 Emergency charging stations near {current_location}:\n\n"
 
             for i, station in enumerate(stations, 1):
@@ -1234,12 +1328,7 @@ class ActionHandlePreferenceCharging(Action):
                         coords, preference)
 
                     if stations:
-                        response = f"⚡ {preference} charging stations near your location:\n\n"
-                        response += format_station_list(
-                            stations, limit=5, show_indices=True) + "\n\n"
-                        response += "💡 Type the exact station name to get details"
-
-                        dispatcher.utter_message(text=response)
+                        _send_station_cards(dispatcher, stations, limit=5)
                         return [
                             SlotSet("charging_preference", preference),
                             SlotSet("current_location", current_location),
@@ -1270,6 +1359,81 @@ class ActionHandlePreferenceCharging(Action):
             return []
 
 
+class ActionGetDirectionsById(Action):
+    def name(self) -> Text:
+        return "action_get_directions_by_id"
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        # Extract station_id from slash intent payload
+        station_id: Optional[str] = None
+        for ent in tracker.latest_message.get("entities", []) or []:
+            if ent.get("entity") == "station_id" and ent.get("value") is not None:
+                station_id = str(ent.get("value"))
+                break
+
+        displayed: List[Dict[str, Any]] = tracker.get_slot(
+            "displayed_stations") or []
+
+        # Try to find matching station in displayed list
+        target_station: Optional[Dict[str, Any]] = None
+        if isinstance(displayed, list):
+            for st in displayed:
+                if not isinstance(st, dict):
+                    continue
+                try:
+                    mapped = _map_station_for_ui(st)
+                    if station_id and str(mapped.get("station_id")) == str(station_id):
+                        target_station = st
+                        break
+                except Exception:
+                    continue
+
+        # Determine origin and destination strings for maps link
+        user_lat = tracker.get_slot("user_lat")
+        user_lng = tracker.get_slot("user_lng")
+        origin_str = f"({user_lat}, {user_lng})" if user_lat is not None and user_lng is not None else "My Location"
+
+        if target_station is None:
+            # Fallback to using station_id directly as destination if it looks like coordinates
+            dest_hint = None
+            if isinstance(station_id, str) and "," in station_id:
+                dest_hint = station_id
+            else:
+                # Last resort: use any selected station name in slot
+                dest_hint = tracker.get_slot(
+                    "selected_station") or station_id or "Destination"
+            maps_link = ActionAdvancedDirections()._build_maps_link(origin_str, str(dest_hint))
+            dispatcher.utter_message(text=f"🧭 **Directions:** {maps_link}")
+            # Store route so traffic action can use it
+            start_slot = [user_lat, user_lng] if user_lat is not None and user_lng is not None else (
+                tracker.get_slot("current_location") or "My Location")
+            return [
+                SlotSet("start_location", start_slot),
+                SlotSet("end_location", str(dest_hint)),
+            ]
+
+        # Use station address/name
+        destination = target_station.get("address") or target_station.get(
+            "name") or station_id or "Destination"
+        maps_link = ActionAdvancedDirections()._build_maps_link(origin_str, destination)
+
+        dispatcher.utter_message(text=f"🧭 **Directions:** {maps_link}")
+        # Persist route for traffic lookup
+        start_slot = [user_lat, user_lng] if user_lat is not None and user_lng is not None else (
+            tracker.get_slot("current_location") or "My Location")
+        responses: List[Dict[Text, Any]] = [
+            SlotSet("start_location", start_slot),
+            SlotSet("end_location", destination),
+        ]
+        dispatcher.utter_message(text="Would you like real-time traffic for this route?",
+                                 buttons=[
+                                     {"title": "Yes, show traffic",
+                                         "payload": "/get_traffic_info"},
+                                     {"title": "No, thanks", "payload": "/goodbye"},
+                                 ])
+        return responses
+
+
 class ActionHandlePreferenceLocationInput(Action):
     def name(self) -> Text:
         return "action_handle_preference_location_input"
@@ -1298,14 +1462,7 @@ class ActionHandlePreferenceLocationInput(Action):
             coords, preference)
 
         if stations:
-            response = f"⚡ {preference} charging stations near {location}:\n\n"
-
-            response += format_station_list(stations,
-                                            limit=5, show_indices=True) + "\n\n"
-
-            response += "💡 Type the exact station name"
-
-            dispatcher.utter_message(text=response)
+            _send_station_cards(dispatcher, stations, limit=5)
             return [
                 SlotSet("conversation_context",
                         ConversationContexts.PREFERENCE_RESULTS),
@@ -1728,7 +1885,8 @@ class ActionHandleActionChoice(Action):
             route_stations = data_service.get_route_stations(
                 start_location, end_location) if start_location and end_location else []
             # Map by lowercased name for quick lookup
-            by_name = {(s.get('name') or '').lower(): s for s in route_stations}
+            by_name = {(s.get('name') or '').lower()
+                        : s for s in route_stations}
 
             # Prefer the ones we showed to the user first
             for s in displayed[:5]:
@@ -2142,5 +2300,4 @@ class ActionEnhancedPreferenceFiltering(Action):
                 )
             )
             return [SlotSet("conversation_context", ConversationContexts.ENDED)]
-
         return []

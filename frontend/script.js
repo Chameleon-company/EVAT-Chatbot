@@ -1,198 +1,644 @@
+// const chat = document.getElementById("chat");
+// const form = document.getElementById("chat-form");
+// const userInput = document.getElementById("user-input");
+// const typingIndicator = document.getElementById("typing-indicator");
+// const clearBtn = document.getElementById("clear-btn");
+
+// let userLocation = null;
+
+// // Restore chat from localStorage
+// window.onload = async () => {
+//   const stored = localStorage.getItem("chatHistory");
+//   if (stored) chat.innerHTML = stored;
+
+//   addMessage("Hi! I'm EVAT. Getting your location...", "bot");
+
+//   // Try to get user location and send it to Rasa
+//   try {
+//     const loc = await getUserLocation();
+//     userLocation = {
+//       lat: loc.coords.latitude,
+//       lng: loc.coords.longitude  // Changed from 'lon' to 'lng' to match Rasa
+//     };
+
+//     // Automatically send location to Rasa to trigger the menu
+//     await sendLocationToRasa();
+
+//   } catch (error) {
+//     // Location failed, show fallback message
+//     addMessage("Location access denied. Please type your suburb name (e.g., 'Richmond') to continue.", "bot");
+//   }
+// };
+
+// function addMessage(text, sender = "bot") {
+//   // Create the message container
+//   const msg = document.createElement("div");
+//   msg.classList.add("message", sender);
+//   msg.textContent = text;
+
+//   // Create the timestamp
+//   const timestamp = document.createElement("div");
+//   timestamp.className = "timestamp";
+//   timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+//   // Append the message and timestamp to the chat
+//   chat.appendChild(msg);
+//   chat.appendChild(timestamp);
+
+//   // Manually set a timeout to ensure the DOM is updated before scrolling
+//   setTimeout(() => {
+//     // Ensure that we scroll the chat container and not just the messages
+//     const chatContainer = document.getElementById("chat-container");
+
+//     // Log to ensure we are selecting the correct element
+//     console.log("chatContainer scrollHeight: ", chatContainer.scrollHeight);
+//     console.log("chatContainer scrollTop: ", chatContainer.scrollTop);
+//     console.log("chatContainer clientHeight: ", chatContainer.clientHeight);
+
+//     // Scroll the chat container to the bottom
+//     chatContainer.scrollTop = chatContainer.scrollHeight;
+//   }, 0);
+
+//   // Save chat history to localStorage
+//   localStorage.setItem("chatHistory", chat.innerHTML);
+// }
+
+
+// function addDirectionsCard(payload) {
+//   const container = document.createElement("div");
+//   container.classList.add("message", "bot");
+//   container.innerHTML = `
+//     <div><strong>🗺️ Directions</strong></div>
+//     <div>${payload.origin} → ${payload.destination}</div>
+//     <div>Distance: ${payload.distance_km != null ? payload.distance_km.toFixed(1) + ' km' : '—'} | ETA: ${payload.eta_min != null ? Math.round(payload.eta_min) + ' min' : '—'}${payload.delay_min ? ` (+${Math.round(payload.delay_min)} min traffic)` : ''}</div>
+//     ${payload.maps_url ? `<div style="margin-top:6px"><a href="${payload.maps_url}" target="_blank" rel="noopener">Open in Google Maps</a></div>` : ''}
+//   `;
+//   chat.appendChild(container);
+
+//   // instruction but not done
+//   const steps = Array.isArray(payload.instructions)
+//     ? payload.instructions
+//     : (typeof payload.instructions === 'string' ? [payload.instructions] : []);
+//   if (Array.isArray(steps) && steps.length) {
+//     const list = document.createElement('ol');
+//     list.style.margin = '6px 0 0 18px';
+//     steps.slice(0, 8).forEach(step => {
+//       const li = document.createElement('li');
+//       li.textContent = step;
+//       list.appendChild(li);
+//     });
+//     chat.appendChild(list);
+//   }
+
+//   // Scroll and persist
+//   const timestamp = document.createElement("div");
+//   timestamp.className = "timestamp";
+//   timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+//   chat.appendChild(timestamp);
+//   const chatContainer = document.getElementById("chat-container");
+//   if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+//   localStorage.setItem("chatHistory", chat.innerHTML);
+// }
+
+// function addTrafficCard(payload) {
+//   const container = document.createElement("div");
+//   container.classList.add("message", "bot");
+//   const speedText = (payload.current_speed_kmh != null && payload.free_flow_speed_kmh != null)
+//     ? ` | Speed: ${Math.round(payload.current_speed_kmh)} km/h (free-flow ${Math.round(payload.free_flow_speed_kmh)} km/h)`
+//     : '';
+//   const congestionText = payload.congestion_level != null ? ` | Level ${payload.congestion_level}` : '';
+//   container.innerHTML = `
+//     <div><strong>🚦 Traffic</strong></div>
+//     <div>${payload.origin} → ${payload.destination}</div>
+//     <div>Status: ${payload.status || 'Available'}${congestionText}${speedText}${payload.delay_min != null ? ` | Delay: ${Math.round(payload.delay_min)} min` : ''}</div>
+//   `;
+//   chat.appendChild(container);
+
+//   const timestamp = document.createElement("div");
+//   timestamp.className = "timestamp";
+//   timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+//   chat.appendChild(timestamp);
+//   const chatContainer = document.getElementById("chat-container");
+//   if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+//   localStorage.setItem("chatHistory", chat.innerHTML);
+// }
+
+// function handleRasaResponse(messages) {
+//   messages.forEach((msg) => {
+//     // Standard text
+//     if (msg.text) addMessage(msg.text, "bot");
+
+//     // Custom JSON payloads (Rasa REST channel: "custom" field)
+//     const payload = msg.custom || msg.json_message || null;
+//     if (!payload || typeof payload !== 'object') return;
+
+//     if (payload.type === 'directions') {
+//       addDirectionsCard(payload);
+//     } else if (payload.type === 'traffic') {
+//       addTrafficCard(payload);
+//     }
+//   });
+// }
+
+
+
+// async function getUserLocation() {
+//   return new Promise((resolve, reject) => {
+//     if (navigator.geolocation) {
+//       navigator.geolocation.getCurrentPosition(resolve, reject);
+//     } else {
+//       reject(new Error("Geolocation not supported."));
+//     }
+//   });
+// }
+
+// async function sendLocationToRasa() {
+//   try {
+//     const payload = {
+//       sender: "user",
+//       message: "hello",  // Send a greeting to trigger the menu
+//       metadata: userLocation
+//     };
+
+//     const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(payload),
+//     });
+
+//     const data = await response.json();
+//     if (data.length > 0) {
+//       handleRasaResponse(data);
+//     }
+//   } catch (err) {
+//     console.error("Error sending location to Rasa:", err);
+//   }
+// }
+
+// async function sendMessage(message) {
+//   typingIndicator.classList.remove("hidden");
+
+//   try {
+//     const payload = {
+//       sender: "user",
+//       message,
+//       metadata: userLocation || {}
+//     };
+
+//     const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(payload),
+//     });
+
+//     const data = await response.json();
+//     if (data.length === 0) {
+//       addMessage("Sorry, I didn’t understand that.", "bot");
+//     } else {
+//       handleRasaResponse(data);
+//     }
+//   } catch (err) {
+//     addMessage("Server error. Please try again.", "bot");
+//   } finally {
+//     typingIndicator.classList.add("hidden");
+//   }
+// }
+
+// form.addEventListener("submit", async (e) => {
+//   e.preventDefault();
+//   const message = userInput.value.trim();
+//   if (!message) return;
+
+//   addMessage(message, "user");
+//   userInput.value = "";
+//   userInput.rows = 1;
+
+//   await sendMessage(message);
+// });
+
+// userInput.addEventListener("input", () => {
+//   userInput.rows = Math.min(5, Math.ceil(userInput.scrollHeight / 24));
+// });
+
+// userInput.addEventListener("keydown", (e) => {
+//   if (e.key === "Enter" && !e.shiftKey) {
+//     e.preventDefault();
+//     form.requestSubmit();
+//   }
+// });
+
+// clearBtn.addEventListener("click", () => {
+//   if (confirm("Clear all chat messages?")) {
+//     chat.innerHTML = "";
+//     localStorage.removeItem("chatHistory");
+//     addMessage("Chat cleared. How can I help you now?", "bot");
+//   }
+// });
+
+
+
+// DOM
 const chat = document.getElementById("chat");
 const form = document.getElementById("chat-form");
 const userInput = document.getElementById("user-input");
 const typingIndicator = document.getElementById("typing-indicator");
 const clearBtn = document.getElementById("clear-btn");
+const chatFrame = document.getElementById("chat-frame");
 
 let userLocation = null;
 
-// Restore chat from localStorage
-window.onload = async () => {
-  const stored = localStorage.getItem("chatHistory");
-  if (stored) chat.innerHTML = stored;
+// Auto-resize config for textarea
+let baseInputHeight = null;           // single-line height in px
+const MAX_INPUT_HEIGHT = 120;         // cap growth
+let showFcpChips = false; // controls showing Fastest/Cheapest/Premium chips
 
-  addMessage("Hi! I'm EVAT. Getting your location...", "bot");
+/* ---------- Station card helpers ---------- */
+function formatDistance(km) {
+  if (km == null) return "—";
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+}
+function availabilityBadge(avail) {
+  const v = (avail || "").toString().toLowerCase();
+  if (v === "yes" || v === "available") return { text: "Available", cls: "available" };
+  if (v === "no" || v === "busy") return { text: "Busy", cls: "busy" };
+  return { text: "Unknown", cls: "unknown" };
+}
 
-  // Try to get user location and send it to Rasa
-  try {
-    const loc = await getUserLocation();
-    userLocation = {
-      lat: loc.coords.latitude,
-      lng: loc.coords.longitude  // Changed from 'lon' to 'lng' to match Rasa
-    };
-
-    // Automatically send location to Rasa to trigger the menu
-    await sendLocationToRasa();
-
-  } catch (error) {
-    // Location failed, show fallback message
-    addMessage("Location access denied. Please type your suburb name (e.g., 'Richmond') to continue.", "bot");
+/* Renders a list of station cards inside a bot message row */
+function addStationCards(stations = [], opts = {}) {
+  if (!Array.isArray(stations) || stations.length === 0) {
+    addMessage("No stations found nearby.", "bot");
+    return;
   }
-};
 
-function addMessage(text, sender = "bot") {
-  // Create the message container
-  const msg = document.createElement("div");
-  msg.classList.add("message", sender);
-  msg.textContent = text;
+  const row = document.createElement("div");
+  row.className = "message-row bot";
 
-  // Create the timestamp
-  const timestamp = document.createElement("div");
-  timestamp.className = "timestamp";
-  timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const avatar = document.createElement("div");
+  avatar.className = "avatar bot";
+  avatar.textContent = "⚡";
 
-  // Append the message and timestamp to the chat
-  chat.appendChild(msg);
-  chat.appendChild(timestamp);
+  const bubble = document.createElement("div");
+  bubble.className = "bubble station-wrap";
 
-  // Manually set a timeout to ensure the DOM is updated before scrolling
-  setTimeout(() => {
-    // Ensure that we scroll the chat container and not just the messages
-    const chatContainer = document.getElementById("chat-container");
+  const list = document.createElement("div");
+  list.className = "station-list";
 
-    // Log to ensure we are selecting the correct element
-    console.log("chatContainer scrollHeight: ", chatContainer.scrollHeight);
-    console.log("chatContainer scrollTop: ", chatContainer.scrollTop);
-    console.log("chatContainer clientHeight: ", chatContainer.clientHeight);
+  const availPill = (a) => {
+    const v = (a || "").toString().toLowerCase();
+    if (v === "yes" || v === "available") return { txt: "Available", cls: "available" };
+    if (v === "no" || v === "busy") return { txt: "Busy", cls: "busy" };
+    return { txt: "Unknown", cls: "unknown" };
+  };
+  const fmtDist = (km) => km == null ? "—" : (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
 
-    // Scroll the chat container to the bottom
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  }, 0);
+  stations.forEach(s => {
+    const badge = availPill(s.availability);
+    const card = document.createElement("div");
+    card.className = "station-card";
+    card.innerHTML = `
+  <div class="station-icon">⚡</div>
 
-  // Save chat history to localStorage
+  <div class="station-main">
+    <div class="station-top">
+      <div>
+        <div class="station-name">${s.name || "Unnamed station"}</div>
+        <div class="station-address">${s.address || ""}</div>
+      </div>
+      ${opts.show_availability
+        ? `<span class="station-badge ${badge.cls}">${badge.txt}</span>`
+        : ""}
+    </div>
+
+    <div class="station-meta">
+      <div class="kv">
+        <div class="label">Distance</div>
+        <div class="value">${fmtDist(s.distance_km)}</div>
+      </div>
+      <div class="kv">
+        <div class="label">Cost</div>
+        <div class="value emphasize">${s.cost || "—"}</div>
+      </div>
+      <div class="kv power">
+        <div class="label">Power</div>
+        <div class="value">${s.power != null ? `${s.power} kW` : "—"}</div>
+      </div>
+    </div>
+
+    <div class="station-actions">
+      <button type="button"
+              class="btn-primary station-directions"
+              data-id="${s.station_id}">Get Directions</button>
+    </div>
+  </div>
+`;
+    list.appendChild(card);
+  });
+
+  bubble.appendChild(list);
+  const ts = document.createElement("span");
+  ts.className = "timestamp";
+  ts.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  bubble.appendChild(ts);
+
+  row.append(avatar, bubble);
+  chat.appendChild(row);
+
+  bubble.querySelectorAll(".station-directions").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const sid = btn.getAttribute("data-id");
+      addMessage("Get Directions", "user");
+      sendMessage(`/get_directions{"station_id":"${sid}"}`);
+    });
+  });
+
   localStorage.setItem("chatHistory", chat.innerHTML);
 }
 
 
-function addDirectionsCard(payload) {
-  const container = document.createElement("div");
-  container.classList.add("message", "bot");
-  container.innerHTML = `
-    <div><strong>🗺️ Directions</strong></div>
-    <div>${payload.origin} → ${payload.destination}</div>
-    <div>Distance: ${payload.distance_km != null ? payload.distance_km.toFixed(1) + ' km' : '—'} | ETA: ${payload.eta_min != null ? Math.round(payload.eta_min) + ' min' : '—'}${payload.delay_min ? ` (+${Math.round(payload.delay_min)} min traffic)` : ''}</div>
-    ${payload.maps_url ? `<div style="margin-top:6px"><a href="${payload.maps_url}" target="_blank" rel="noopener">Open in Google Maps</a></div>` : ''}
-  `;
-  chat.appendChild(container);
+/* ---------- Utilities ---------- */
+const scrollToBottom = () => {
+  requestAnimationFrame(() => {
+    chatFrame.scrollTop = chatFrame.scrollHeight;
+  });
+};
 
-  // instruction but not done
-  const steps = Array.isArray(payload.instructions)
-    ? payload.instructions
-    : (typeof payload.instructions === 'string' ? [payload.instructions] : []);
-  if (Array.isArray(steps) && steps.length) {
-    const list = document.createElement('ol');
-    list.style.margin = '6px 0 0 18px';
-    steps.slice(0, 8).forEach(step => {
-      const li = document.createElement('li');
-      li.textContent = step;
-      list.appendChild(li);
-    });
-    chat.appendChild(list);
+const timestamp = () =>
+  new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+/* ---------- Basic sanitizer for bot text ---------- */
+function sanitize(html) {
+  // strip <script>...</script> and inline on* handlers
+  return String(html)
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/\son\w+="[^"]*"/gi, "");
+}
+
+/* ---------- Message rendering with avatars ---------- */
+function addMessage(text, sender = "bot") {
+  const row = document.createElement("div");
+  row.className = `message-row ${sender}`;
+
+  const avatar = document.createElement("div");
+  avatar.className = `avatar ${sender}`;
+  avatar.textContent = sender === "bot" ? "⚡" : "🙂";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  // Strip markdown-style bold (**text**) before rendering
+  const cleanText = text.replace(/\*\*(.*?)\*\*/g, "$1");
+  bubble.innerHTML = sanitize(cleanText);
+
+  const ts = document.createElement("span");
+  ts.className = "timestamp";
+  ts.textContent = timestamp();
+  bubble.appendChild(ts);
+
+  if (sender === "bot") {
+    row.append(avatar, bubble);
+  } else {
+    row.append(bubble, avatar);
   }
 
-  // Scroll and persist
-  const timestamp = document.createElement("div");
-  timestamp.className = "timestamp";
-  timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  chat.appendChild(timestamp);
-  const chatContainer = document.getElementById("chat-container");
-  if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
-  localStorage.setItem("chatHistory", chat.innerHTML);
+  chat.appendChild(row);
+  persist();
+  scrollToBottom();
+
+  // Add inline chips when the bot asks for 1/2/3
+  if (
+    sender === "bot" &&
+    /press|type/i.test(text) &&
+    /1.*2.*3|1, 2, or 3/i.test(text)
+  ) {
+    addChips(["1", "2", "3"]);
+  }
+  // Arm the F/C/P chips only when the bot asks the actual question
+  if (sender === "bot" && /what'?s\s+most\s+important\s+to\s+you/i.test(text)) {
+    showFcpChips = true;
+  }
+  // Add inline chips for Fastest/Cheapest/Premium — only once per prompt
+  if (
+    sender === "bot" &&
+    showFcpChips &&
+    /fastest|cheapest|premium/i.test(text) &&
+    !/1.*2.*3/.test(text)
+  ) {
+    addChips(["Cheapest", "Fastest", "Premium"]);
+    showFcpChips = false;  // prevent re-showing on follow-up bot messages
+  }
+}
+
+function addChips(options) {
+  const row = document.createElement("div");
+  row.className = "message-row bot";
+
+  const spacer = document.createElement("div");
+  spacer.className = "avatar bot";
+  spacer.textContent = "⚡";
+
+  const wrap = document.createElement("div");
+  wrap.className = "bubble";
+
+  const chips = document.createElement("div");
+  chips.className = "chips";
+
+  options.forEach((opt) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.textContent = opt;
+    chip.addEventListener("click", () => {
+      showFcpChips = false;        // ensure we don't show them again on the next bot line
+      addMessage(opt, "user");
+      sendMessage(opt);
+      row.remove();                 // remove the chips row after click
+    });
+    chips.appendChild(chip);
+  });
+
+  wrap.appendChild(chips);
+  row.append(spacer, wrap);
+  chat.appendChild(row);
+  persist();
+  scrollToBottom();
+}
+
+/* Cards keep the same payloads but render inside bot bubble */
+function addCard(innerHTML) {
+  const row = document.createElement("div");
+  row.className = "message-row bot";
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar bot";
+  avatar.textContent = "⚡";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = innerHTML;
+  bubble.appendChild(card);
+
+  const ts = document.createElement("span");
+  ts.className = "timestamp";
+  ts.textContent = timestamp();
+  bubble.appendChild(ts);
+
+  row.append(avatar, bubble);
+  chat.appendChild(row);
+  persist();
+  scrollToBottom();
+}
+
+function addDirectionsCard(payload) {
+  const steps = Array.isArray(payload.instructions)
+    ? payload.instructions
+    : typeof payload.instructions === "string"
+      ? [payload.instructions]
+      : [];
+  addCard(`
+    <div><strong>🗺️ Directions</strong></div>
+    <div>${payload.origin} → ${payload.destination}</div>
+    <div>Distance: ${payload.distance_km != null ? payload.distance_km.toFixed(1) + " km" : "—"
+    } | ETA: ${payload.eta_min != null ? Math.round(payload.eta_min) + " min" : "—"
+    }${payload.delay_min ? ` (+${Math.round(payload.delay_min)} min traffic)` : ""}</div>
+    ${payload.maps_url ? `
+  <div class="map-card">
+    <iframe
+      src="${payload.maps_url}&output=embed"
+      width="100%"
+      height="200"
+      style="border:0; border-radius:10px;"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+    <div style="margin-top:6px; text-align:center">
+      <a href="${payload.maps_url}" target="_blank" rel="noopener" class="btn-map">Open in Google Maps</a>
+    </div>
+  </div>` : ""}
+    }
+    ${steps.length
+      ? `<ol style="margin:8px 0 0 18px">${steps
+        .slice(0, 8)
+        .map((s) => `<li>${s}</li>`)
+        .join("")}</ol>`
+      : ""
+    }
+  `);
 }
 
 function addTrafficCard(payload) {
-  const container = document.createElement("div");
-  container.classList.add("message", "bot");
-  const speedText = (payload.current_speed_kmh != null && payload.free_flow_speed_kmh != null)
-    ? ` | Speed: ${Math.round(payload.current_speed_kmh)} km/h (free-flow ${Math.round(payload.free_flow_speed_kmh)} km/h)`
-    : '';
-  const congestionText = payload.congestion_level != null ? ` | Level ${payload.congestion_level}` : '';
-  container.innerHTML = `
+  const speedText =
+    payload.current_speed_kmh != null && payload.free_flow_speed_kmh != null
+      ? ` | Speed: ${Math.round(payload.current_speed_kmh)} km/h (free-flow ${Math.round(
+        payload.free_flow_speed_kmh
+      )} km/h)`
+      : "";
+  const congestionText =
+    payload.congestion_level != null ? ` | Level ${payload.congestion_level}` : "";
+  addCard(`
     <div><strong>🚦 Traffic</strong></div>
     <div>${payload.origin} → ${payload.destination}</div>
-    <div>Status: ${payload.status || 'Available'}${congestionText}${speedText}${payload.delay_min != null ? ` | Delay: ${Math.round(payload.delay_min)} min` : ''}</div>
-  `;
-  chat.appendChild(container);
-
-  const timestamp = document.createElement("div");
-  timestamp.className = "timestamp";
-  timestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  chat.appendChild(timestamp);
-  const chatContainer = document.getElementById("chat-container");
-  if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
-  localStorage.setItem("chatHistory", chat.innerHTML);
+    <div>Status: ${payload.status || "Available"}${congestionText}${speedText}${payload.delay_min != null ? ` | Delay: ${Math.round(payload.delay_min)} min` : ""
+    }</div>
+  `);
 }
 
 function handleRasaResponse(messages) {
   messages.forEach((msg) => {
-    // Standard text
     if (msg.text) addMessage(msg.text, "bot");
 
-    // Custom JSON payloads (Rasa REST channel: "custom" field)
     const payload = msg.custom || msg.json_message || null;
-    if (!payload || typeof payload !== 'object') return;
+    if (!payload || typeof payload !== "object") return;
 
-    if (payload.type === 'directions') {
+    if (payload.type === "directions") {
       addDirectionsCard(payload);
-    } else if (payload.type === 'traffic') {
+    } else if (payload.type === "traffic") {
       addTrafficCard(payload);
+    } else if (Array.isArray(payload.stations)) {
+      addStationCards(payload.stations, { show_availability: !!payload.show_availability });
     }
   });
 }
 
-
-
+/* ---------- Geolocation + init ---------- */
 async function getUserLocation() {
   return new Promise((resolve, reject) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(resolve, reject);
-    } else {
-      reject(new Error("Geolocation not supported."));
-    }
+    if (!navigator.geolocation) return reject(new Error("Geolocation not supported"));
+    navigator.geolocation.getCurrentPosition(resolve, reject);
   });
 }
 
 async function sendLocationToRasa() {
-  try {
-    const payload = {
-      sender: "user",
-      message: "hello",  // Send a greeting to trigger the menu
-      metadata: userLocation
-    };
-
-    const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    if (data.length > 0) {
-      handleRasaResponse(data);
-    }
-  } catch (err) {
-    console.error("Error sending location to Rasa:", err);
-  }
+  const payload = {
+    sender: "user",
+    message: "hello",
+    metadata: userLocation,
+  };
+  const res = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (Array.isArray(data) && data.length) handleRasaResponse(data);
 }
 
-async function sendMessage(message) {
-  typingIndicator.classList.remove("hidden");
+function persist() {
+  localStorage.setItem("chatHistory", chat.innerHTML);
+}
+
+function attachStationDirectionsHandlers() {
+  document.querySelectorAll(".station-directions").forEach((btn) => {
+    if (btn.dataset.bound) return;       // avoid duplicate binding
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const sid = btn.getAttribute("data-id");
+      addMessage("Get Directions", "user");
+      sendMessage(`/get_directions{"station_id":"${sid}"}`);
+    });
+  });
+}
+
+window.onload = async () => {
+  const stored = localStorage.getItem("chatHistory");
+  if (stored) chat.innerHTML = stored;
+  attachStationDirectionsHandlers();
+
+  // measure single-line height once
+  userInput.style.height = 'auto';
+  baseInputHeight = userInput.scrollHeight;
+
+  addMessage("Hello! Welcome to Melbourne EV Charging Assistant! ⚡", "bot");
+  addMessage("📍 **Getting your location…**", "bot");
+  addMessage("Please accept the location permission when prompted.", "bot");
 
   try {
-    const payload = {
-      sender: "user",
-      message,
-      metadata: userLocation || {}
-    };
+    const loc = await getUserLocation();
+    userLocation = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+    addMessage("✅ **Location detected!** Now I can help you find the best charging options.", "bot");
+    await sendLocationToRasa();
+  } catch (e) {
+    addMessage(
+      "⚠️ Location access denied. Please type your suburb name (e.g., 'Richmond') to continue.",
+      "bot"
+    );
+  }
+};
 
+/* ---------- Messaging ---------- */
+async function sendMessage(message) {
+  typingIndicator.classList.remove("hidden");
+  try {
+    const payload = { sender: "user", message, metadata: userLocation || {} };
     const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
     const data = await response.json();
-    if (data.length === 0) {
+    if (!Array.isArray(data) || data.length === 0) {
       addMessage("Sorry, I didn’t understand that.", "bot");
     } else {
       handleRasaResponse(data);
@@ -204,6 +650,7 @@ async function sendMessage(message) {
   }
 }
 
+/* Form + input behaviours */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = userInput.value.trim();
@@ -211,13 +658,23 @@ form.addEventListener("submit", async (e) => {
 
   addMessage(message, "user");
   userInput.value = "";
-  userInput.rows = 1;
-
+  userInput.style.height = baseInputHeight + 'px';   // reset height
   await sendMessage(message);
 });
 
+
 userInput.addEventListener("input", () => {
-  userInput.rows = Math.min(5, Math.ceil(userInput.scrollHeight / 24));
+  if (baseInputHeight == null) {
+    userInput.style.height = 'auto';
+    baseInputHeight = userInput.scrollHeight;
+  }
+
+  // reset to single-line then grow only if content actually wraps
+  userInput.style.height = baseInputHeight + 'px';
+  const needed = Math.min(MAX_INPUT_HEIGHT, userInput.scrollHeight);
+  if (needed > baseInputHeight + 2) {           // small threshold avoids first-char jump
+    userInput.style.height = needed + 'px';
+  }
 });
 
 userInput.addEventListener("keydown", (e) => {
@@ -227,10 +684,10 @@ userInput.addEventListener("keydown", (e) => {
   }
 });
 
+/* Clear chat */
 clearBtn.addEventListener("click", () => {
-  if (confirm("Clear all chat messages?")) {
-    chat.innerHTML = "";
-    localStorage.removeItem("chatHistory");
-    addMessage("Chat cleared. How can I help you now?", "bot");
-  }
+  if (!confirm("Clear all chat messages?")) return;
+  chat.innerHTML = "";
+  localStorage.removeItem("chatHistory");
+  addMessage("Chat cleared. How can I help you now?", "bot");
 });

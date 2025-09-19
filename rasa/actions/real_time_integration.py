@@ -17,7 +17,6 @@ except ImportError as e:
     logger = logging.getLogger(__name__)
     logger.warning(f"Real-time APIs not available: {e}")
 
-# access CSV-backed coordinates through data_service
 try:
     from .data_service import data_service
 except Exception:

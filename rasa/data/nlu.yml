@@ -1,6 +1,12 @@
 version: "3.1"
 
 nlu:
+- intent: get_directions
+  examples: |
+    - /get_directions{"station_id":"-37.8136,144.9631"}
+    - /get_directions{"station_id":"123"}
+    - /get_directions{"station_id":"abc-xyz"}
+
 - intent: greet
   examples: |
     - hi

@@ -26,6 +26,7 @@ intents:
   - get_traffic_info
   # Advanced directions intent
   - get_advanced_directions
+  - get_directions
 
 entities:
   - menu_option
@@ -40,6 +41,7 @@ entities:
   - connector_type
   - price
   - power_level
+  - station_id
 
 slots:
   menu_option:
@@ -210,6 +212,7 @@ actions:
   - action_advanced_directions
   # Route info action
   - action_handle_route_info
+  - action_get_directions_by_id
 
 session_config:
   session_expiration_time: 60

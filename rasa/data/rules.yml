@@ -236,6 +236,12 @@ rules:
   - intent: get_advanced_directions
   - action: action_advanced_directions
 
+# Clickable 'Get Directions' from station cards (slash intent with station_id)
+- rule: Handle get directions by station id
+  steps:
+  - intent: get_directions
+  - action: action_get_directions_by_id
+
 # Ended conversation: ignore further input
 - rule: Ignore input when ended
   condition:
