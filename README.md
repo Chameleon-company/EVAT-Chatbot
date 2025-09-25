@@ -1,115 +1,184 @@
-# EVAT - Electric Vehicle Adoption Tools
+# EVAT – Electric Vehicle Adoption Tools
 
-A conversational AI chatbot designed to help electric vehicle users find charging stations and get relevant information using Rasa framework.
+A conversational AI chatbot designed to help electric vehicle users find charging stations, plan routes, and get relevant information using the Rasa framework.
+
+## 🌐 Live Demo
+The EVAT Chatbot is now deployed online and accessible via Netlify: https://t2-rasa-chatbpt-2025.netlify.app/
+
+**About the live demo:**
+- Users can access the chatbot directly from a browser without local setup.
+- All main flows—Route Planning, Emergency Charging, and Charging Preferences—are fully interactive.
+- The bot detects the user’s location (via browser geolocation) for a starting point.
+- Station cards display filtered charging stations with Get Directions, Check Availability, and Compare Options buttons.
+- Real-time traffic information is provided via TomTom APIs for accurate route planning.
+- The live demo is ideal for testing and showcasing the chatbot functionality.
+
+---
 
 ## 🚀 Features
-
 - **Location-based charging station finder**
-- **Real-time traffic-aware routing**
-- **Charging station filtering by preferences**
-- **Detailed station information**
+- **Emergency Charging mode** → asks for car model or connector type (CHAdeMO, Tesla Model 3, Type 2, CCS) and returns compatible nearby stations (within ~10 km).
+- **Real-time, traffic-aware routing** (powered by TomTom API)
+- **Charging preferences with station cards** → users can filter by:
+  - Fastest (high-speed chargers)
+  - Cheapest (budget-friendly)
+  - Premium (well-equipped/high-rated)
+- **Interactive station cards** with:
+  - Station details (name, suburb, coordinates, charger type)
+  - Buttons for Get Directions, Check Availability, and Compare Options
+  - Google Maps integration for live traffic and routes
 - **Web-based chat interface**
-- Planned: **live connector availability**, **ML-powered ETA**
+- Planned: **live connector availability**, **ML-powered ETA predictions**
+
+---
 
 ## 📁 Project Structure
+EVAT_Chatbot/  
+├── rasa/                 # Rasa chatbot configuration  
+│   ├── domain.yml        # Intent, entity, and action definitions  
+│   ├── config.yml        # NLU pipeline and policy configuration  
+│   ├── endpoints.yml     # API endpoints  
+│   ├── credentials.yml   # Authentication settings  
+│   ├── actions/          # Custom action implementations  
+│   └── data/             # Training data (intents, stories, rules)  
+├── backend/              # Core business logic  
+│   ├── real_time_apis.py # TomTom client used by actions  
+│   └── utils/            # Utility functions  
+├── frontend/             # Web interface  
+│   ├── index.html        # Main chat interface  
+│   ├── script.js         # Frontend logic  
+│   └── style.css         # Styling  
+├── data/                 # Datasets  
+│   └── raw/              # CSV files (charging stations, coordinates)  
+├── ml/                   # Machine learning models  
+│   ├── classification.py # Station classification  
+│   ├── regression.py     # ETA prediction  
+│   └── README.md         # ML documentation  
+├── config/               # Configuration files  
+├── README.md             # Project overview  
+├── requirements.txt      # Dependencies  
+└── .gitignore            # Git ignore rules
 
-```
-EVAT_Chatbot/
-├── rasa/                 # Rasa chatbot configuration
-│   ├── domain.yml       # Intent, entity, and action definitions
-│   ├── config.yml       # NLU pipeline and policy configuration
-│   ├── endpoints.yml    # API endpoints
-│   ├── credentials.yml  # Authentication settings
-│   ├── actions/         # Custom action implementations
-│   └── data/           # Training data (intents, stories, rules)
-├── backend/            # Core business logic
-│   ├── real_time_apis.py # TomTom client used by actions
-│   └── utils/          # Utility functions
-├── frontend/           # Web interface
-│   ├── index.html      # Main chat interface
-│   ├── script.js       # Frontend logic
-│   └── style.css       # Styling
-├── data/              # Datasets
-│   └── raw/           # CSV files (charging stations, coordinates)
-├── ml/                # Machine learning models
-│   ├── classification.py # Station classification
-│   ├── regression.py    # ETA prediction
-│   └── README.md       # ML documentation
-├── config/            # Configuration files
-├── README.md          # Project overview
-├── requirements.txt   # Dependencies
-└── .gitignore        # Git ignore rules
-```
+---
 
-## 🧩 How to use the chatbot (local setup)
+## 🧩 How to Use the Chatbot (Local Setup)
 
-### Quick setup
-```bash
-cd EVAT_Chatbot
-python -m venv rasa_env && source rasa_env/bin/activate
-pip install -r requirements.txt
-cd rasa && rasa train
+1. Quick setup  
+- Navigate to the project directory: `cd EVAT_Chatbot`  
+- Create a virtual environment: `python -m venv rasa_env`  
+- Activate the virtual environment:  
+  - On Mac/Linux: `source rasa_env/bin/activate`  
+  - On Windows (PowerShell): `.\rasa_env\Scripts\Activate`  
+- Install requirements: `pip install -r requirements.txt`
 
-Tab 1: rasa run actions --port 5055
-Tab 2: rasa run --enable-api --cors "*"
-Open frontend/index.html (or serve frontend/ via python -m http.server 8080)
-```
+2. Train the Rasa model  
+- Navigate to the Rasa folder: `cd rasa`  
+- Train the model: `rasa train`
 
-### Open the web chat
-- Open `frontend/index.html` in your browser. It posts to `http://localhost:5005/webhooks/rest/webhook`.
-- Ensure the Rasa server was started with `--cors "*"` so the browser can call it.
+3. Run Servers  
+- Tab 1: Run Actions Server  
+  - On Mac/Linux:  
+    `source ../rasa_env/bin/activate`  
+    `cd rasa`  
+    `rasa run actions --port 5055`  
+  - On Windows:  
+    `.\rasa_env\Scripts\Activate`  
+    `cd rasa`  
+    `rasa run actions --port 5055`  
+- Tab 2: Run Rasa Core Server  
+  - On Mac/Linux:  
+    `source ../rasa_env/bin/activate`  
+    `cd rasa`  
+    `rasa run --enable-api --cors "*"`  
+  - On Windows:  
+    `.\rasa_env\Scripts\Activate`  
+    `cd rasa`  
+    `rasa run --enable-api --cors "*"`
 
+4. Frontend setup  
+- Navigate to the frontend folder: `cd frontend`  
+- Start a local server: `python -m http.server 8080` (or `python3 -m http.server 8080` on some systems)  
+- Open the application in your browser: `http://localhost:8080`  
+- The frontend (`index.html`) communicates with: `http://localhost:5005/webhooks/rest/webhook`
 
-```bash
-cd frontend
-python -m http.server 8080
-# open http://localhost:8080
-```
+**Note:**
+- Windows users should run commands in **PowerShell**.  
+- Mac/Linux users should run commands in **Terminal**.  
+- Ensure that **Python 3.8+** is installed and accessible in your system path.  
+- Always activate the virtual environment before running servers.
 
-### Interact (3 flows)
-- Route planning: `1` → `from Carlton to Geelong` → `get_directions pls` → `get_traffic_info`
-- Emergency charging: `2` → `Richmond` → type a station name → `get directions pls`
-- Preferences: `3` → `fastest` (or `cheapest`/`premium`) → `Melbourne` → type a station name
+---
 
-### How it works
-- Locations resolve from CSV names to coordinates; if a name isn’t in the CSV, you’ll be asked to try another.
-- TomTom provides real-time distance/ETA/traffic when both start and destination coords exist.
-- The frontend is wired to Rasa REST and also sends browser geolocation (`lat`, `lon`) as metadata; actions currently do not use this metadata yet.
+## 🎮 Interact with the Bot
+When you start chatting, the bot detects your location or asks for your starting suburb. You then choose a destination.
 
-### Real-time TomTom
-Handled via `backend/real_time_apis.py` (used by Rasa actions)
+Main conversation flows:
 
+1. **🗺️ Route Planning – plan charging stops for a journey**  
+- Bot suggests chargers within ~10 km of current location.
 
-## 🖥️ Frontend (current state)
-- The chat UI in `frontend/` is already wired to the Rasa REST webhook.
-- It sends `lat`/`lon` from the browser as `metadata` with each message.
+2. **🚨 Emergency Charging – find nearest compatible station when battery is low**  
+Flow:  
+1. User selects Emergency Charging.  
+2. Bot asks: “Tell me your car model or connector type (CHAdeMO, Type 2, CCS, Tesla Model 3, etc.)”  
+3. Bot finds compatible stations within ~10 km of current location.  
+4. Station cards displayed with Get Directions (Google Maps), Check Availability, Compare Options.
 
-- Limitations today:
-  - Actions do not yet use the `metadata.lat/lon` to improve results.
-  - Plain text rendering only (no quick-reply buttons or cards yet).
-  - Live availability is not implemented.
+3. **⚡ Charging Preferences – Filter Chargers by Preference**  
+The user selects one of the following preferences: Cheapest, Premium, Fastest
 
-## 📍 Data sources used
-- `data/raw/Co-ordinates.csv` for suburb coordinates
-- `data/raw/charger_info_mel.csv` for stations
+Flow:  
+1. The chatbot asks the user to select a preference (Cheapest, Premium, or Fastest).  
+2. The system determines the user’s location (from browser geolocation).  
+3. Based on the selected preference, the chatbot filters available charging stations near the user’s location.  
+4. The filtered results are displayed as station cards, each containing:  
+   - Station name, suburb, and charger type  
+   - Distance from user’s location  
+   - Buttons for: Get Directions (opens Google Maps with real-time traffic), Check Availability, Compare Options  
+5. The user can select any station card to proceed with navigation or availability checks.
 
-## 🔄 Real-time readiness
-- **Done**:
-  - Key in `.env`(`TOMTOM_API_KEY`) used by backend
-  - Real-time routing + traffic via TomTom (CSV-backed locations)
-  - Frontend wired via REST; or use Rasa shell
-- **How it works now**:
-  - Names (start/end) resolve to coordinates via CSV only; then TomTom provides route/traffic
-  - Frontend sends metadata lat/lon, but actions currently resolve start/end from CSV
-- **Gaps**:
-  - Start from user location (metadata lat/lon) not yet used by actions
-  - Stations are CSV-based (no TomTom station search or availability yet)
-  - Dataset: missing/null values; some station names/addresses inconsistent
-  - Matching: station lookup is strict; fuzzy matching can be added for better tolerance
-- **Next**:
-1) Use browser lat/lon (metadata) as start coords; keep CSV for names.
-2) Add along-route/nearby station search (TomTom) as fallback when CSV returns no results.
-3) Add live availability (new API) and fold into ranking.
-4) Add fuzzy matching + CSV cleanup.
-5) Frontend: UI enhancements and interactivity — quick-reply buttons (send payloads), clickable options, station “cards” with details and CTAs (Get directions, Show traffic)...
-6) Optional: incorporate ML ranking/ETA once wired into actions.
+---
+
+## ⚙️ How It Works
+- Station resolution: Names/suburbs → coordinates via CSV dataset.  
+- Routing & traffic: TomTom API for distance, ETA, and traffic.  
+- Station cards: Show details + CTA buttons (directions, availability, compare).  
+- Frontend: Browser geolocation (lat/lon) sent as metadata → integrated into search.
+
+---
+
+## 🖥️ Frontend (Current State)
+- Chat UI wired to Rasa REST webhook.  
+- Station cards implemented (previously text-only).  
+- Buttons link directly to Google Maps with live traffic.
+
+**Current limitations:**
+- Live connector availability not yet fully integrated. 
+- Only works in Melbourne Metropolitan area.
+
+---
+
+## 📍 Data Sources
+- `data/raw/Co-ordinates.csv` → suburb coordinates  
+- `data/raw/charger_info_mel.csv` → charging station details
+
+---
+
+## 🔄 Real-Time Readiness
+**Currently working:**
+- `.env` (`TOMTOM_API_KEY`) for API authentication  
+- Real-time routing + traffic  
+- Station cards with buttons  
+- Frontend REST connection
+
+**Known gaps:**
+- Live connector availability (planned)  
+- Fuzzy matching for location input  
+- More advanced ML-powered ETA prediction
+
+**Next steps:**
+- Integrate connector availability API  
+- Enhance fallback to TomTom station search when CSV fails  
+- Improve UI with more quick-reply options  
+- Add fuzzy matching + CSV cleanup  
+- Incorporate ML ranking & ETA predictions
