@@ -28,7 +28,6 @@ The EVAT Chatbot is now deployed online and accessible via Netlify: https://t2-r
   - Buttons for Get Directions, Check Availability, and Compare Options
   - Google Maps integration for live traffic and routes
 - **Web-based chat interface**
-- Planned: **live connector availability**, **ML-powered ETA predictions**
 
 ---
 
@@ -153,7 +152,6 @@ Flow:
 - Buttons link directly to Google Maps with live traffic.
 
 **Current limitations:**
-- Live connector availability not yet fully integrated. 
 - Only works in Melbourne Metropolitan area.
 
 ---
@@ -161,24 +159,11 @@ Flow:
 ## 📍 Data Sources
 - `data/raw/Co-ordinates.csv` → suburb coordinates  
 - `data/raw/charger_info_mel.csv` → charging station details
-
+  
 ---
-
-## 🔄 Real-Time Readiness
-**Currently working:**
-- `.env` (`TOMTOM_API_KEY`) for API authentication  
-- Real-time routing + traffic  
-- Station cards with buttons  
-- Frontend REST connection
-
-**Known gaps:**
-- Live connector availability (planned)  
-- Fuzzy matching for location input  
-- More advanced ML-powered ETA prediction
-
-**Next steps:**
-- Integrate connector availability API  
-- Enhance fallback to TomTom station search when CSV fails  
-- Improve UI with more quick-reply options  
-- Add fuzzy matching + CSV cleanup  
-- Incorporate ML ranking & ETA predictions
+## Next Step
+- Improve Searching Algorithm
+- Optimize Rasa to pick up most entities
+- Expand the dataset to cover all charging stations in Melbourne
+- Enhance UX/UI
+  
