@@ -1,6 +1,41 @@
-rasa/rasa_env/
-rasa/models/
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual/Conda environments
+.env/
+.venv/
+venv/
+ENV/
+env/
+
+# Editors/OS
+.vscode/
+*.code-workspace
 .DS_Store
-rasa/.rasa/
-*.pyc
+Thumbs.db
+
+# Flask instance (if used)
+instance/
+
+# Logs
+*.log
+
+# Project-specific (DO NOT COMMIT secrets or local caches)
+ev_data/
+user_state/
+Key.env
+Key.env.*
+
+# Optional: ignore local CSVs if they’re generated
+# *.csv
