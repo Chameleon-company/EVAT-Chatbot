@@ -264,6 +264,18 @@ rules:
   - intent: get_directions
   - action: action_get_directions_by_id
 
+# New station availability rule
+- rule: Handle station availability
+  steps:
+  - intent: station_availability
+  - action: utter_station_availability
+
+# New nearby stations rule
+- rule: Handle nearby stations
+  steps:
+  - intent: nearby_stations
+  - action: utter_nearby_stations
+
 # Ended conversation: ignore further input
 - rule: Ignore input when ended
   condition:

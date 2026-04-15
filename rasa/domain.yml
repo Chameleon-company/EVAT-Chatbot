@@ -22,17 +22,14 @@ intents:
   - deny
   # Enhanced preference filtering intent
   - filter_by_preferences
-  # Enhanced charger information intent
   - get_charger_info
-  # Traffic information intent
   - get_traffic_info
-  # Advanced directions intent
   - get_advanced_directions
   - get_directions
-  - affirm
-  - deny
   - ask_help
   - explain_route_planning
+  - station_availability
+  - nearby_stations
 
 entities:
   - menu_option
@@ -78,7 +75,6 @@ slots:
       - type: from_entity
         entity: current_location
 
-
   preference_type:
     type: text
     influence_conversation: true
@@ -91,7 +87,6 @@ slots:
     influence_conversation: true
     mappings:
       - type: custom
-
 
   action_type:
     type: text
@@ -198,11 +193,11 @@ responses:
   utter_explain_route_planning:
     - text: "Route planning helps you find suitable EV charging stations for your trip. You can tell me your starting location and destination, and I can help show charging options, traffic information, and directions."
 
+  utter_station_availability:
+    - text: "I can help check station availability, but I need a station name or selected station first."
 
-
-
-
-
+  utter_nearby_stations:
+    - text: "I can help find nearby charging stations. Please share your location or allow location access."
 
 actions:
   - action_collect_initial_location
@@ -219,15 +214,10 @@ actions:
   - action_handle_emergency_location_input
   - action_handle_emergency_charging
   - action_handle_preference_charging
-  # Enhanced preference filtering action
   - action_enhanced_preference_filtering
-  # Enhanced charger information action
   - action_enhanced_charger_info
-  # Traffic information action
   - action_traffic_info
-  # Advanced directions action
   - action_advanced_directions
-  # Route info action
   - action_handle_route_info
   - action_get_directions_by_id
   - action_contextual_help
