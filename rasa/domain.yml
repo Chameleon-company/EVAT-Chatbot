@@ -21,7 +21,6 @@ intents:
   - nlu_fallback
   - affirm
   - deny
-  # Enhanced preference filtering intent
   - filter_by_preferences
   - get_charger_info
   - get_traffic_info
@@ -31,6 +30,7 @@ intents:
   - explain_route_planning
   - station_availability
   - nearby_stations
+  - ask_congestion_prediction
 
 entities:
   - menu_option
@@ -46,6 +46,7 @@ entities:
   - price
   - power_level
   - station_id
+  - location
 
 slots:
   menu_option:
@@ -183,6 +184,26 @@ slots:
     mappings:
       - type: custom
 
+  # ⭐ NEW: slot để lưu context cũ
+  previous_context:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  location:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: location
+
+  station_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_text
+
 responses:
   utter_default:
     - text: "I didn’t quite catch that. Please choose one option:\n1) Route planning\n2) Emergency charging\n3) Charging preferences"
@@ -199,6 +220,7 @@ responses:
 
   utter_nearby_stations:
     - text: "I can help find nearby charging stations. Please share your location or allow location access."
+
 
 actions:
   - action_collect_initial_location
@@ -223,6 +245,9 @@ actions:
   - action_get_directions_by_id
   - action_contextual_help
   - action_nearby_stations
+  - action_congestion_prediction
+  - action_store_previous_context
+  - action_restore_previous_context
 
 session_config:
   session_expiration_time: 60

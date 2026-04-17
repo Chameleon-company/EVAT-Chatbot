@@ -1,14 +1,22 @@
 version: "3.1"
 
 rules:
+  # ============================
+  # GLOBAL INTERRUPT RULE (ADDED)
+  # ============================
+- rule: GLOBAL override — congestion prediction interrupt
+  condition: []
+  steps:
+  - intent: ask_congestion_prediction
+  - action: action_congestion_prediction
 
-# Greeting rule
+  # Greeting rule
 - rule: Greet user
   steps:
   - intent: greet
   - action: action_collect_initial_location
 
-# Initial location collection rule - handle when user provides location after greeting
+  # Initial location collection rule - handle when user provides location after greeting
 - rule: Handle initial location collection
   condition:
   - slot_was_set:
@@ -16,7 +24,7 @@ rules:
   steps:
   - action: action_collect_initial_location
 
-# Show initial menu only on fallback when no conversation context
+  # Show initial menu only on fallback when no conversation context
 - rule: Handle initial fallback to menu
   condition:
   - slot_was_set:
@@ -25,7 +33,7 @@ rules:
   - intent: nlu_fallback
   - action: action_handle_any_input
 
-# Menu selection rule - handle when user types 1, 2, or 3
+  # Menu selection rule - handle when user types 1, 2, or 3
 - rule: Handle menu selection
   condition:
   - slot_was_set:
@@ -34,7 +42,7 @@ rules:
   - intent: menu_selection
   - action: action_handle_menu_selection
 
-# Route planning rule
+  # Route planning rule
 - rule: Handle route planning
   condition:
   - slot_was_set:
@@ -43,13 +51,13 @@ rules:
   - intent: route_planning
   - action: action_handle_menu_selection
 
-# Route info rule - handle when user provides route details
+  # Route info rule - handle when user provides route details
 - rule: Handle route info
   steps:
   - intent: route_info
   - action: action_handle_route_info
 
-# Route input rule - handle when user types route in route planning context
+  # Route input rule - handle when user types route in route planning context
 - rule: Handle route input in route planning context
   condition:
   - slot_was_set:
@@ -76,7 +84,7 @@ rules:
   - intent: emergency_charging
   - action: action_handle_menu_selection
 
-# Emergency location input rule
+  # Emergency location input rule
 - rule: Handle emergency location input
   condition:
   - slot_was_set:
@@ -85,7 +93,7 @@ rules:
   - intent: emergency_location_input
   - action: action_handle_emergency_location_input
 
-# Treat it as an emergency location when we're in emergency mode.
+  # Treat it as an emergency location when we're in emergency mode.
 - rule: Handle preference-style location as emergency when in emergency flow
   condition:
   - slot_was_set:
@@ -94,7 +102,7 @@ rules:
   - intent: preference_location_input
   - action: action_handle_emergency_location_input
 
-# Preference charging rule
+  # Preference charging rule
 - rule: Handle preference charging
   condition:
   - slot_was_set:
@@ -103,7 +111,7 @@ rules:
   - intent: preference_charging
   - action: action_handle_menu_selection
 
-# Preference selection rule - user picks cheapest/fastest/premium
+  # Preference selection rule - user picks cheapest/fastest/premium
 - rule: Handle preference selection
   condition:
   - slot_was_set:
@@ -112,7 +120,7 @@ rules:
   - intent: preference_selection
   - action: action_handle_preference_charging
 
-# Preference location input rule - user provides location for preference flow
+  # Preference location input rule - user provides location for preference flow
 - rule: Handle preference location input
   condition:
   - slot_was_set:
@@ -121,8 +129,8 @@ rules:
   - intent: preference_location_input
   - action: action_handle_preference_location_input
 
-# Preference location fallback: if user says "in <location>" which might be
-# classified as emergency_location_input, still handle it as preference location
+  # Preference location fallback: if user says "in <location>" which might be
+  # classified as emergency_location_input, still handle it as preference location
 - rule: Handle emergency-style location as preference when in preference flow
   condition:
   - slot_was_set:
@@ -131,7 +139,7 @@ rules:
   - intent: emergency_location_input
   - action: action_handle_preference_location_input
 
-# Route station selection rule - only valid in route planning context
+  # Route station selection rule - only valid in route planning context
 - rule: Handle route station selection
   condition:
   - slot_was_set:
@@ -140,7 +148,7 @@ rules:
   - intent: route_station_selection
   - action: action_handle_route_station_selection
 
-# Fallback: treat unclassified input as station selection in route results
+  # Fallback: treat unclassified input as station selection in route results
 - rule: Handle fallback as route station selection
   condition:
   - slot_was_set:
@@ -149,7 +157,7 @@ rules:
   - intent: nlu_fallback
   - action: action_handle_route_station_selection
 
-# Station selection after comparison (still in station details)
+  # Station selection after comparison (still in station details)
 - rule: Handle route station selection in station details
   condition:
   - slot_was_set:
@@ -158,7 +166,7 @@ rules:
   - intent: route_station_selection
   - action: action_handle_route_station_selection
 
-# Fallback: treat unclassified input as station selection in station details
+  # Fallback: treat unclassified input as station selection in station details
 - rule: Handle fallback as route station selection in station details
   condition:
   - slot_was_set:
@@ -167,7 +175,7 @@ rules:
   - intent: nlu_fallback
   - action: action_handle_route_station_selection
 
-# Emergency station selection rule - only valid in emergency context
+  # Emergency station selection rule - only valid in emergency context
 - rule: Handle emergency station selection
   condition:
   - slot_was_set:
@@ -176,7 +184,7 @@ rules:
   - intent: emergency_station_selection
   - action: action_handle_emergency_station_selection
 
-# Preference station selection rule - only valid in preference context
+  # Preference station selection rule - only valid in preference context
 - rule: Handle preference station selection
   condition:
   - slot_was_set:
@@ -185,8 +193,8 @@ rules:
   - intent: preference_station_selection
   - action: action_handle_preference_station_selection
 
-# If user says a station name that gets classified as route station selection while
-# viewing preference results, still handle with the preference station selector
+  # If user says a station name that gets classified as route station selection while
+  # viewing preference results, still handle with the preference station selector
 - rule: Handle route-style selection in preference results
   condition:
   - slot_was_set:
@@ -195,7 +203,7 @@ rules:
   - intent: route_station_selection
   - action: action_handle_preference_station_selection
 
-# If the NLU can't classify the station name, fallback to preference selector
+  # If the NLU can't classify the station name, fallback to preference selector
 - rule: Handle fallback selection in preference results
   condition:
   - slot_was_set:
@@ -204,7 +212,7 @@ rules:
   - intent: nlu_fallback
   - action: action_handle_preference_station_selection
 
-# Action selection rule
+  # Action selection rule
 - rule: Handle action choice
   condition:
   - slot_was_set:
@@ -213,13 +221,13 @@ rules:
   - intent: action_selection
   - action: action_handle_action_choice
 
-# Follow-up requests rule
+  # Follow-up requests rule
 - rule: Handle follow-up requests
   steps:
   - intent: follow_up
   - action: action_handle_follow_up
 
-# Enhanced preference filtering rule
+  # Enhanced preference filtering rule
 - rule: Handle enhanced preference filtering
   condition:
   - slot_was_set:
@@ -228,13 +236,13 @@ rules:
   - intent: filter_by_preferences
   - action: action_enhanced_preference_filtering
 
-# Enhanced charger information rule
+  # Enhanced charger information rule
 - rule: Handle enhanced charger information
   steps:
   - intent: get_charger_info
   - action: action_enhanced_charger_info
 
-# Traffic information rule
+  # Traffic information rule
 - rule: Handle traffic information
   steps:
   - intent: get_traffic_info
@@ -258,7 +266,7 @@ rules:
   - intent: get_advanced_directions
   - action: action_advanced_directions
 
-# Clickable 'Get Directions' from station cards (slash intent with station_id)
+  # Clickable 'Get Directions' from station cards (slash intent with station_id)
 - rule: Handle get directions by station id
   steps:
   - intent: get_directions
@@ -284,28 +292,19 @@ rules:
   steps:
   - action: utter_goodbye
 
-# Goodbye rule
+  # Goodbye rule
 - rule: Say goodbye
   steps:
   - intent: goodbye
   - action: utter_goodbye
 
-# Emergency connector/model input handling
+  # Emergency connector/model input handling
 - rule: Handle emergency connector/model input
   condition:
   - slot_was_set:
     - conversation_context: emergency_charging
   steps:
   - intent: emergency_connector_input
-  - action: action_handle_emergency_location_input
-
-# Emergency fallback routed to connector/model step
-- rule: Handle emergency fallback as connector/model
-  condition:
-  - slot_was_set:
-    - conversation_context: emergency_charging
-  steps:
-  - intent: nlu_fallback
   - action: action_handle_emergency_location_input
 
 # Generic fallback in active flows
