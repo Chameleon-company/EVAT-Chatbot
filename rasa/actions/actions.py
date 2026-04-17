@@ -1482,7 +1482,7 @@ class ActionHandleRouteStationSelection(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         conversation_context = tracker.get_slot("conversation_context")
         # Allow selection both right after route results and after a comparison view
-        if conversation_context not in [ConversationContexts.ROUTE_PLANNING_RESULTS, ConversationContexts.STATION_DETAILS]:
+        if conversation_context != ConversationContexts.ROUTE_PLANNING_RESULTS:
 
             pref_contexts = [ConversationContexts.PREFERENCE_CHARGING,
                              ConversationContexts.PREFERENCE_RESULTS]
@@ -2301,3 +2301,126 @@ class ActionEnhancedPreferenceFiltering(Action):
             )
             return [SlotSet("conversation_context", ConversationContexts.ENDED)]
         return []
+    
+# ============================================================
+# ALL YOUR ORIGINAL ACTIONS (UNCHANGED)
+# ============================================================
+
+# (To save space, I am not repeating them here — keep everything exactly as in your file)
+
+# ============================================================
+# NEW ACTIONS FOR INTERRUPT + RESUME FLOW
+# ============================================================
+
+class ActionStorePreviousContext(Action):
+    def name(self) -> Text:
+        return "action_store_previous_context"
+
+    def run(self, dispatcher, tracker, domain):
+        current_context = tracker.get_slot("conversation_context")
+        return [SlotSet("previous_context", current_context)]
+
+
+class ActionRestorePreviousContext(Action):
+    def name(self) -> Text:
+        return "action_restore_previous_context"
+
+    def run(self, dispatcher, tracker, domain):
+        prev = tracker.get_slot("previous_context")
+        return [SlotSet("conversation_context", prev)]
+
+
+class ActionCongestionPrediction(Action):
+    def name(self) -> Text:
+        return "action_congestion_prediction"
+
+    def run(self, dispatcher, tracker, domain):
+
+        # Lấy location từ entity
+        location = tracker.get_slot("location")
+
+        if not location:
+            dispatcher.utter_message(
+                text="Which location would you like a congestion prediction for?"
+            )
+            return []
+
+        # Demo prediction
+        prediction = 0.78
+
+        dispatcher.utter_message(
+            text=f"⚡ Predicted congestion level for **{location}** is **{prediction*100:.0f}%** in the next 30 minutes."
+        )
+
+        # ================================
+        # ⭐ XÁC ĐỊNH START LOCATION
+        # ================================
+        start_location = None
+
+        # 1) Nếu đang ở route planning → dùng start_location slot
+        if tracker.get_slot("start_location"):
+            start_location = tracker.get_slot("start_location")
+
+        # 2) Nếu có current_location (initial location) → dùng
+        elif tracker.get_slot("current_location"):
+            start_location = tracker.get_slot("current_location")
+
+        # 3) Nếu có user_lat/lng → dùng toạ độ
+        elif tracker.get_slot("user_lat") and tracker.get_slot("user_lng"):
+            start_location = (
+                tracker.get_slot("user_lat"),
+                tracker.get_slot("user_lng")
+            )
+
+        # 4) Nếu không có start → báo lỗi
+        if not start_location:
+            dispatcher.utter_message(
+                text="I need your starting location to find charging stations."
+            )
+            return []
+
+        # ================================
+        # ⭐ GỌI LẠI ROUTE PLANNING
+        # ================================
+        try:
+            stations = data_service.get_route_stations(
+                start_location,
+                location
+            )
+
+            if stations:
+                _send_station_cards(dispatcher, stations, limit=10)
+
+                response = f"⚡ Found {len(stations)} charging stations from **{start_location}** to **{location}**:\n\n"
+                for i, station in enumerate(stations[:5]):
+                    response += f"**{i+1}. {station.get('name')}**\n"
+                    response += f"⚡ {station.get('power')} | 💰 {station.get('cost')}\n\n"
+
+                response += "Type a station name to choose one."
+
+                dispatcher.utter_message(text=response)
+
+                return [
+                    SlotSet("start_location", start_location),
+                    SlotSet("end_location", location),
+                    SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
+                ]
+
+            else:
+                dispatcher.utter_message(
+                    text=f"⚡ No charging stations found for route to {location}."
+                )
+                return []
+
+        except Exception:
+            dispatcher.utter_message(
+                text="⚠️ Error retrieving stations for this location."
+            )
+            return [
+                SlotSet("start_location", start_location),
+                SlotSet("end_location", location),
+                SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS),
+                SlotSet("previous_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
+            ]
+
+
