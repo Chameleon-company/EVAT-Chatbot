@@ -10,7 +10,7 @@ COPY rasa/config.yml ./config.yml
 COPY rasa/credentials.yml ./credentials.yml
 COPY rasa/endpoints.cloud.yml ./endpoints.yml
 COPY rasa/data/ ./data/
-COPY rasa/models/20260426-155101-relative-bandit.tar.gz ./models/
+COPY rasa/models/cloud-model.tar.gz ./models/
 
 USER 1001
 

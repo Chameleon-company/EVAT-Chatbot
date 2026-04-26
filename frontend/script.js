@@ -334,9 +334,9 @@ async function sendLocationToRasa() {
   const payload = {
     sender: "user",
     message: "hello",
-    metadata: userLocation,
+    metadata: userLocation || {},
   };
-  const res = await fetch("${RASA_URL}/webhooks/rest/webhook", {
+  const res = await fetch(`${RASA_URL}/webhooks/rest/webhook`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -386,7 +386,7 @@ async function sendMessage(message) {
   typingIndicator.classList.remove("hidden");
   try {
     const payload = { sender: "user", message, metadata: userLocation || {} };
-    const response = await fetch("${RASA_URL}/webhooks/rest/webhook", {
+    const response = await fetch(`${RASA_URL}/webhooks/rest/webhook`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

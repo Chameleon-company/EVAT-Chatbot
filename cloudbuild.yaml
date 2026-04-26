@@ -1,0 +1,68 @@
+steps:
+  # Step 1: Train Rasa model on linux/amd64 (native GCP hardware — no emulation)
+  - name: "rasa/rasa:3.6.15"
+    entrypoint: "rasa"
+    args:
+      - train
+      - --config
+      - rasa/config.yml
+      - --domain
+      - rasa/domain.yml
+      - --data
+      - rasa/data
+      - --out
+      - rasa/models
+      - --fixed-model-name
+      - cloud-model
+    id: train-model
+
+  # Step 2: Build Rasa Docker image with the freshly trained model
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - --platform=linux/amd64
+      - -f
+      - Dockerfile.rasa
+      - -t
+      - australia-southeast1-docker.pkg.dev/$PROJECT_ID/evat-chatbot/evat-rasa:latest
+      - .
+    id: build-rasa
+    waitFor: [train-model]
+
+  # Step 3: Push to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - australia-southeast1-docker.pkg.dev/$PROJECT_ID/evat-chatbot/evat-rasa:latest
+    id: push-rasa
+    waitFor: [build-rasa]
+
+  # Step 4: Get actions server URL then deploy Rasa to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        ACTIONS_URL=$(gcloud run services describe evat-actions \
+          --region=australia-southeast1 \
+          --project=$PROJECT_ID \
+          --format="value(status.url)")
+        echo "Actions URL: $$ACTIONS_URL"
+        gcloud run deploy evat-rasa \
+          --image=australia-southeast1-docker.pkg.dev/$PROJECT_ID/evat-chatbot/evat-rasa:latest \
+          --platform=managed \
+          --region=australia-southeast1 \
+          --project=$PROJECT_ID \
+          --port=5005 \
+          --memory=4Gi \
+          --cpu=2 \
+          --min-instances=1 \
+          --max-instances=3 \
+          --timeout=300 \
+          --set-env-vars="RASA_ACTIONS_URL=$$ACTIONS_URL"
+    id: deploy-rasa
+    waitFor: [push-rasa]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8

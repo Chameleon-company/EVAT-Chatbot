@@ -134,7 +134,10 @@
       <button type="submit">Send</button>
     </form>
   
+    <!-- POST-DEPLOY: uncomment and set your Cloud Run Rasa URL -->
+    <!-- <script>window.RASA_URL = "https://evat-rasa-XXXXXXXX-ts.a.run.app";</script> -->
     <script>
+      const RASA_URL = window.RASA_URL || "http://localhost:5005";
       const chat = document.getElementById("chat");
       const form = document.getElementById("chat-form");
       const userInput = document.getElementById("user-input");
@@ -185,7 +188,7 @@
             metadata: userLocation ? userLocation : {}  // Append location metadata
           };
   
-          const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+          const response = await fetch(`${RASA_URL}/webhooks/rest/webhook`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

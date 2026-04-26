@@ -1,0 +1,37 @@
+name: Train Rasa Model (linux/amd64)
+
+on:
+  workflow_dispatch:  # manual trigger only
+
+jobs:
+  train:
+    runs-on: ubuntu-latest  # linux/amd64 — matches Cloud Run
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Rasa 3.6.15
+        run: pip install rasa==3.6.15
+
+      - name: Train model
+        run: |
+          cd rasa
+          rasa train \
+            --config config.yml \
+            --domain domain.yml \
+            --data data \
+            --out models \
+            --fixed-model-name cloud-model
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-model
+          path: rasa/models/cloud-model.tar.gz
+          retention-days: 7
