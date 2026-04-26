@@ -1290,8 +1290,7 @@ class ActionGetDirectionsById(Action):
                 station_id = str(ent.get("value"))
                 break
 
-        displayed: List[Dict[str, Any]] = tracker.get_slot(
-            "displayed_stations") or []
+        displayed: List[Dict[str, Any]] = tracker.get_slot("displayed_stations") or []
 
         # Try to find matching station in displayed list
         target_station: Optional[Dict[str, Any]] = None
@@ -1379,10 +1378,20 @@ class ActionGetDirectionsById(Action):
             "maps_url": maps_url,
         })
 
+        # Ask user if they want traffic follow-up
+        dispatcher.utter_message(
+            text="Would you like real-time traffic for this route?",
+            buttons=[
+                {"title": "Yes, show traffic", "payload": "/affirm"},
+                {"title": "No, thanks", "payload": "/deny"},
+            ]
+        )
+
         start_slot = [user_lat, user_lng] if user_lat is not None and user_lng is not None else "My Location"
         return [
             SlotSet("start_location", start_slot),
             SlotSet("end_location", destination),
+            SlotSet("conversation_context", ConversationContexts.GETTING_DIRECTIONS),
         ]
 
 
@@ -2033,7 +2042,6 @@ class ActionAdvancedDirections(Action):
                     except Exception:
                         pass
 
-                    # Log computed directions metrics for observability
                     logger.info(
                         f"Directions computed: {start_location} → {end_location} | "
                         f"distance_km={distance_km} | duration_min={duration_min} | delay_min={delay_min}"
@@ -2045,16 +2053,12 @@ class ActionAdvancedDirections(Action):
                     )
 
                     if distance_km is not None or duration_min is not None:
-                        dist_txt = f"{distance_km:.1f} km" if isinstance(
-                            distance_km, (int, float)) else "—"
-                        dur_txt = f"{int(duration_min)} min" if isinstance(
-                            duration_min, (int, float)) else "—"
-                        response_parts.append(
-                            f"• Distance: {dist_txt} | ETA: {dur_txt}")
+                        dist_txt = f"{distance_km:.1f} km" if isinstance(distance_km, (int, float)) else "—"
+                        dur_txt = f"{int(duration_min)} min" if isinstance(duration_min, (int, float)) else "—"
+                        response_parts.append(f"• Distance: {dist_txt} | ETA: {dur_txt}")
 
                     if isinstance(delay_min, (int, float)) and delay_min > 0:
-                        response_parts.append(
-                            f"• Traffic delay: +{int(delay_min)} min")
+                        response_parts.append(f"• Traffic delay: +{int(delay_min)} min")
 
                     if traffic_info:
                         congestion = traffic_info.get("congestion_level")
@@ -2066,18 +2070,17 @@ class ActionAdvancedDirections(Action):
                             )
 
                     dispatcher.utter_message(text="\n".join(response_parts))
-                    # Ask if the user wants real-time traffic next
+
                     dispatcher.utter_message(
                         text="Would you like real-time traffic for this route?",
                         buttons=[
-                            {"title": "Yes, show traffic",
-                                "payload": "/get_traffic_info"},
-                            {"title": "No, thanks", "payload": "/goodbye"},
+                            {"title": "Yes, show traffic", "payload": "/affirm"},
+                            {"title": "No, thanks", "payload": "/deny"},
                         ],
                     )
+
                     return [
-                        SlotSet("conversation_context",
-                                None),
+                        SlotSet("conversation_context", ConversationContexts.GETTING_DIRECTIONS),
                         SlotSet("start_location", start_location),
                         SlotSet("end_location", end_location),
                     ]
@@ -2091,17 +2094,17 @@ class ActionAdvancedDirections(Action):
                 f"Real-time data unavailable right now. Please try again later."
             )
         )
-        # Still offer traffic button so user learns about the option
+
         dispatcher.utter_message(
             text="Would you like to check traffic for this route?",
             buttons=[
-                {"title": "Yes, show traffic", "payload": "/get_traffic_info"},
-                {"title": "No, thanks", "payload": "/goodbye"},
+                {"title": "Yes, show traffic", "payload": "/affirm"},
+                {"title": "No, thanks", "payload": "/deny"},
             ],
         )
+
         return [
-            SlotSet("conversation_context",
-                    None),
+            SlotSet("conversation_context", ConversationContexts.GETTING_DIRECTIONS),
             SlotSet("start_location", start_location),
             SlotSet("end_location", end_location),
         ]
@@ -2116,7 +2119,6 @@ class ActionAdvancedDirections(Action):
                 f"&destination={destination_enc}&travelmode=driving"
             )
         return f"https://www.google.com/maps/search/?api=1&query={origin_enc}"
-
 
 class ActionTrafficInfo(Action):
     def name(self) -> Text:

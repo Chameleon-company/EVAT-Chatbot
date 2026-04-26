@@ -6,7 +6,32 @@ nlu:
     - /get_directions{"station_id":"-37.8136,144.9631"}
     - /get_directions{"station_id":"123"}
     - /get_directions{"station_id":"abc-xyz"}
+- intent: affirm
+  examples: |
+    - yes
+    - yeah
+    - yep
+    - y
+    - sure
+    - okay
+    - ok
+    - of course
+    - sounds good
+    - please do
+    - go ahead
+    - yes please
 
+- intent: deny
+  examples: |
+    - no
+    - nope
+    - nah
+    - n
+    - no thanks
+    - not now
+    - don't
+    - do not
+    - no please
 - intent: greet
   examples: |
     - hi
@@ -819,6 +844,24 @@ nlu:
     - to [Carlton](end_location)
     - to [South Yarra](end_location)
     - to [St Kilda](end_location)
+    - [Docklands](end_location)
+    - [Glenroy](end_location)
+    - [Fawkner](end_location)
+    - [Carlton](end_location)
+    - [Richmond](end_location)
+    - [Melbourne](end_location)
+    - [South Yarra](end_location)
+    - [Geelong](end_location)
+    - [Brunswick](end_location)
+    - [Footscray](end_location)
+    - [St Kilda](end_location)
+    - [Dandenong](end_location)
+    - [Collingwood](end_location)
+    - [Frankston](end_location)
+    - go to [Docklands](end_location)
+    - destination [Glenroy](end_location)
+    - heading to [Fawkner](end_location)
+    - travelling to [Docklands](end_location)
 
 - intent: follow_up
   examples: |
@@ -990,3 +1033,5 @@ nlu:
     - Point Cook Town Centre
     - Red Rooster Vermont
     - Greenvale Woolworths
+    
+  

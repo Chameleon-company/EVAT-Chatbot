@@ -18,6 +18,8 @@ intents:
   - follow_up
   - goodbye
   - nlu_fallback
+  - affirm
+  - deny
   # Enhanced preference filtering intent
   - filter_by_preferences
   # Enhanced charger information intent
