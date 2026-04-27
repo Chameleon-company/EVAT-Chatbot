@@ -241,43 +241,43 @@ rules:
 # Advanced directions rule
 - rule: Handle advanced directions
   steps:
-    - intent: get_advanced_directions
-    - action: action_advanced_directions
+  - intent: get_advanced_directions
+  - action: action_advanced_directions
 
 # Clickable 'Get Directions' from station cards (slash intent with station_id)
 - rule: Handle get directions by station id
   steps:
-    - intent: get_directions
-    - action: action_get_directions_by_id
+  - intent: get_directions
+  - action: action_get_directions_by_id
 
 # Ended conversation: ignore further input
 - rule: Ignore input when ended
   condition:
-    - slot_was_set:
-        - conversation_context: ended
+  - slot_was_set:
+      - conversation_context: ended
   steps:
-    - action: utter_goodbye
+  - action: utter_goodbye
 
 # Goodbye rule
 - rule: Say goodbye
   steps:
-    - intent: goodbye
-    - action: utter_goodbye
+  - intent: goodbye
+  - action: utter_goodbye
 
 # Emergency connector/model input handling
 - rule: Handle emergency connector/model input
   condition:
-    - slot_was_set:
-        - conversation_context: emergency_charging
+  - slot_was_set:
+    - conversation_context: emergency_charging
   steps:
-    - intent: emergency_connector_input
-    - action: action_handle_emergency_location_input
+  - intent: emergency_connector_input
+  - action: action_handle_emergency_location_input
 
 # Emergency fallback routed to connector/model step
 - rule: Handle emergency fallback as connector/model
   condition:
-    - slot_was_set:
-        - conversation_context: emergency_charging
+  - slot_was_set:
+    - conversation_context: emergency_charging
   steps:
-    - intent: nlu_fallback
-    - action: action_handle_emergency_location_input
+  - intent: nlu_fallback
+  - action: action_handle_emergency_location_input
