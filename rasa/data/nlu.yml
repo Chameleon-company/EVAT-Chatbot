@@ -39,7 +39,7 @@ nlu:
     - hey please
     - hey there please
     - start
- 
+
 
 - intent: menu_selection
   examples: |
@@ -150,14 +150,11 @@ nlu:
     - luxury charging
     - budget charging
     - ultra fast charging
-    
     - cheapest option
     - fastest option
     - premium option
-    
     - show me [cheapest](preference_type) charging
     - find [fastest](preference_type) chargers
-    
     - [premium](preference_type) charging
     - preference charging
     - charging preferences
@@ -169,19 +166,18 @@ nlu:
   examples: |
     - [cheapest](preference_type)
     - [fastest](preference_type)
-    
+
     - [premium](preference_type)
     - i prefer [cheapest](preference_type)
     - show [fastest](preference_type)
-    
+
     - let's go with [premium](preference_type)
     - choose [cheapest](preference_type)
-    - select [fastest](preference_type)
-    
+
     - pick [premium](preference_type)
     - go with [cheapest](preference_type)
     - go with [fastest](preference_type)
-    
+
     - go with [premium](preference_type)
 
 - intent: preference_location_input
@@ -201,112 +197,38 @@ nlu:
 
 - intent: route_station_selection
   examples: |
-    - [station_name]
-    - [Malvern Central](station_name)
-    - Malvern Central
-    - Swinburne University - TC Building
     - Tesla Supercharger Box Hill
-    - City of Stonnington
-    - Forest Hill Chase Shopping Centre
-    - Swinburne University - TC Building
     - Telsa Supercharger Box Hill
+    - Mont Albert
+    - Forest Hill Chase Shopping Centre
+    - Exploren Charging Station
+    - Engie - The Glen
     - Malvern Central
-    - [Lynbrook Village](station_name)
-    - [RMIT - City Campus](station_name)
-    - [ENGIE - Victoria Gardens](station_name)
-    - [Swinburne University - TC Building](station_name)
-    - [Camberwell Supercharger](station_name)
-    - [Chadstone Shopping Centre](station_name)
-    - [Tesla Supercharger South Melbourne](station_name)
-    - [High Street](station_name)
-    - [Evie Portland](station_name)
-    - [North Bellarine Aquatic Centre](station_name)
-    - Collingwood Library
-    - Monash Caufield
-    - ENGIE - Chadstone 2
-      - Malvern Central
-    - Lynbrook Village
+    - Swinburne University - TC Building
     - RMIT - City Campus
     - Camberwell Supercharger
     - Chadstone Shopping Centre
     - Tesla Supercharger South Melbourne
-    - ENGIE - Victoria Gardens
-    - Swinburne University - TC Building
-    - High Street
     - Evie Portland
     - North Bellarine Aquatic Centre
-    - 100 St Kilda Road
     - Collingwood Library
-    - Exploren Charging Station
-    - Fleming Park
     - Monash Caufield
-    - Mont Albert
-    - Exploren Charging Station
-    - ENGIE - Chadstone 2
-    - Engie - The Glen
-    - Bayside Gateway
-    - Tesla Supercharger Brighton East
-    - Chargefox - Barnawartha North
+    - Lynbrook Village
     - Chargefox - Euroa
-    - 11 Nicholson Street
-    - Lorbek Luxury Cars
-    - JET Charge Office
-    - Evie Richmond Library
-    - Woolworths Fishermans Bend
-    - Middy's Port Melbourne
-    - Ampcharge Barkly Square
-    - GET Electric Head Office
+    - Chargefox - Barnawartha North
     - Brunswick EV Hub
     - David Street Car Park
-    - RMIT Brunswick
-    - The Parade Ascot Vale Car Park
     - Moonee Ponds Central
     - St Kilda Town Hall
-    - City of Stonnington
-    - Forest Hill Chase Shopping Centre
-    - Swinburne University - TC Building
-    - Tesla Supercharger Box Hill
-    - Malvern Central
-    - Telsa Supercharger Box Hill
     - Coburg Civic Centre / Moreland City
     - Coburg Town Hall / Moreland City
-    - Austin Tower Carpark Level B1
-    - Coburg North EV Fast Charge
     - Oak Park Sports & Aquatic Centre
     - Toyota Altona
-    - CB Smith Reserve
-    - Hobsons Bay Civic Centre
-    - Chargefox Airport West
-    - Tesla Supercharger Campbellfield
-    - Ampol Foodary Altona North
-    - Bridge Street
-    - Tesla Supercharger Box Hill
-    - Evie Glen Gala Village
-    - Keilor Central
-    - Tesla Supercharger Oakleigh Repair Centre
-    - Bayside Council
-    - Jolt Cheltenham
-    - Uni Hill Town Centre
-    - Greensborough Plaza
-    - Watermarc Carpark (LG)
-    - Brimbank Shopping Centre
-    - Southland Medical Centre
-    - Research Way - N1 Carpark monash
-    - Ampol Derrimut
-    - Jolt Black Rock
-    - BP Northpoint
-    - Eltham Leisure Centre
     - BP pulse Diamond Creek
-    - BP Pulse
     - Shell Coles Express Taylors Lakes
-    - Watergardens Shopping Centre
     - Point Cook Town Centre
     - Red Rooster Vermont
     - Greenvale Woolworths
-    - Engie - The Glen
-    - Bayside Gateway
-    - Tesla Supercharger Brighton East
-    - Chargefox - Barnawartha North
 
 # Enhanced preference filtering intent
 - intent: filter_by_preferences
@@ -622,6 +544,39 @@ nlu:
     - finish please
     - end please
 
+- intent: ask_congestion_prediction
+  examples: |
+    - congestion prediction
+    - give me a congestion prediction
+    - can you predict congestion
+    - show me congestion prediction
+    - I want congestion prediction
+    - predict congestion for [Box Hill](location)
+    - give me congestion prediction for [Box Hill](location)
+    - what is the congestion level at [Box Hill](location)
+    - how busy is [Box Hill](location)
+    - is [Box Hill](location) crowded
+    - check congestion at [Box Hill](location)
+    - congestion status at [Box Hill](location)
+    - congestion forecast for [Box Hill](location)
+    - what is the crowd level at [Box Hill](location)
+    - how crowded is [Box Hill](location)
+    - is there heavy congestion at [Box Hill](location)
+    - show congestion level for [Box Hill](location)
+    - give me the congestion forecast for [Box Hill](location)
+    - check how busy [Box Hill](location) is
+    - tell me the congestion prediction for [Box Hill](location)
+    - what is the expected congestion at [Box Hill](location)
+    - forecast congestion for [Box Hill](location)
+    - is [Box Hill](location) busy right now
+    - how much congestion is there at [Box Hill](location)
+    - congestion at [Box Hill](location)
+    - crowd prediction for [Box Hill](location)
+    - traffic congestion prediction for [Box Hill](location)
+    - congestion prediction to [Box Hill](location)
+    - predict congestion for [Richmond](location)
+    - congestion at [Docklands](location)
+    - how busy is [Carlton](location)
 
 - lookup: charging_speed
   examples: |
@@ -755,3 +710,19 @@ nlu:
     - Point Cook Town Centre
     - Red Rooster Vermont
     - Greenvale Woolworths
+
+- lookup: congestion
+  examples: |
+    - crowded
+    - busy
+    - heavy traffic
+    - traffic jam
+    - jammed
+    - packed
+    - full
+    - overloaded
+    - high density
+    - high crowd level
+    - high occupancy
+    - heavy load
+    - high usage

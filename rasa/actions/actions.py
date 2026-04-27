@@ -1482,8 +1482,10 @@ class ActionHandleRouteStationSelection(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         conversation_context = tracker.get_slot("conversation_context")
         # Allow selection both right after route results and after a comparison view
-        if conversation_context not in [ConversationContexts.ROUTE_PLANNING_RESULTS, ConversationContexts.STATION_DETAILS]:
-
+        if conversation_context not in [
+            ConversationContexts.ROUTE_PLANNING_RESULTS,
+            ConversationContexts.STATION_DETAILS
+        ]:
             pref_contexts = [ConversationContexts.PREFERENCE_CHARGING,
                              ConversationContexts.PREFERENCE_RESULTS]
             if conversation_context in pref_contexts:
@@ -2301,3 +2303,145 @@ class ActionEnhancedPreferenceFiltering(Action):
             )
             return [SlotSet("conversation_context", ConversationContexts.ENDED)]
         return []
+
+# ============================================================
+# NEW ACTIONS FOR INTERRUPT + RESUME FLOW
+# ============================================================
+
+class ActionStorePreviousContext(Action):
+    def name(self) -> Text:
+        return "action_store_previous_context"
+
+    def run(self, dispatcher, tracker, domain):
+        current_context = tracker.get_slot("conversation_context")
+        return [SlotSet("previous_context", current_context)]
+
+
+class ActionRestorePreviousContext(Action):
+    def name(self) -> Text:
+        return "action_restore_previous_context"
+
+    def run(self, dispatcher, tracker, domain):
+        prev = tracker.get_slot("previous_context")
+        return [SlotSet("conversation_context", prev)]
+
+
+class ActionCongestionPrediction(Action):
+    def name(self) -> Text:
+        return "action_congestion_prediction"
+
+    def run(self, dispatcher, tracker, domain):
+
+        location = tracker.get_slot("location")
+
+        if not location:
+            dispatcher.utter_message(
+                text="Which location would you like a congestion prediction for?"
+            )
+            return []
+
+        # ================================
+        # ⭐ Identify START LOCATION
+        # ================================
+        start_location = None
+
+        if tracker.get_slot("start_location"):
+            start_location = tracker.get_slot("start_location")
+
+        elif tracker.get_slot("current_location"):
+            start_location = tracker.get_slot("current_location")
+
+        elif tracker.get_slot("user_lat") and tracker.get_slot("user_lng"):
+            start_location = (
+                tracker.get_slot("user_lat"),
+                tracker.get_slot("user_lng")
+            )
+
+        # If no start location → show error message
+        if not start_location:
+            dispatcher.utter_message(
+                text="I need your starting location to find charging stations."
+            )
+            return []
+
+        # ================================
+        # ⭐ Get real CONGESTION
+        # ================================
+        congestion_value = None
+
+        if REAL_TIME_INTEGRATION_AVAILABLE and real_time_manager:
+            try:
+                traffic = real_time_manager.get_traffic_conditions(
+                    start_location,
+                    location
+                )
+
+                if traffic:
+                    congestion_value = traffic.get("congestion_level")
+
+            except Exception as e:
+                print(f"Error getting real-time congestion: {e}")
+
+        if isinstance(congestion_value, int):
+            level_labels = {
+                0: "Free-flow",
+                1: "Light congestion",
+                2: "Moderate congestion",
+                3: "Heavy congestion"
+            }
+
+            congestion_text = level_labels.get(congestion_value, "Unknown")
+
+            dispatcher.utter_message(
+                text=f"🚦 Current congestion level for **{location}** is **{congestion_text}**."
+            )
+        else:
+            dispatcher.utter_message(
+                text=f"⚠️ Real-time congestion data for **{location}** is unavailable right now."
+            )
+
+        # ================================
+        # ⭐ Recall ROUTE PLANNING
+        # ================================
+        try:
+            stations = data_service.get_route_stations(
+                start_location,
+                location
+            )
+
+            if stations:
+                _send_station_cards(dispatcher, stations, limit=10)
+
+                response = f"⚡ Found {len(stations)} charging stations from **{start_location}** to **{location}**:\n\n"
+                for i, station in enumerate(stations[:5]):
+                    response += f"**{i+1}. {station.get('name')}**\n"
+                    response += f"⚡ {station.get('power')} | 💰 {station.get('cost')}\n\n"
+
+                response += "Type a station name to choose one."
+
+                dispatcher.utter_message(text=response)
+
+                return [
+                    SlotSet("start_location", start_location),
+                    SlotSet("end_location", location),
+                    SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
+                ]
+
+            else:
+                dispatcher.utter_message(
+                    text=f"No charging stations found for route to {location}."
+                )
+                return []
+
+        except Exception:
+            dispatcher.utter_message(
+                text="⚠️ Error retrieving stations for this location."
+            )
+            return [
+                SlotSet("start_location", start_location),
+                SlotSet("end_location", location),
+                SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS),
+                SlotSet("previous_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
+            ]
+
+
