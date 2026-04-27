@@ -40,17 +40,21 @@ nlu:
     - hey there please
     - start
 
+
 - intent: menu_selection
   examples: |
     - 1
     - 2
     - 3
 
+
 - intent: goodbye
   examples: |
     - bye
     - pp
     - gud bye
+
+
 
 - intent: route_planning
   examples: |
@@ -134,6 +138,7 @@ nlu:
     - I need a CCS charger
     - chademo connector
 
+
 - intent: preference_charging
   examples: |
     - cheapest charging
@@ -145,33 +150,34 @@ nlu:
     - luxury charging
     - budget charging
     - ultra fast charging
-
     - cheapest option
     - fastest option
     - premium option
-
     - show me [cheapest](preference_type) charging
     - find [fastest](preference_type) chargers
-
     - [premium](preference_type) charging
     - preference charging
     - charging preferences
     - help with preferences
     - preference charging help
 
+
 - intent: preference_selection
   examples: |
     - [cheapest](preference_type)
     - [fastest](preference_type)
+
     - [premium](preference_type)
     - i prefer [cheapest](preference_type)
     - show [fastest](preference_type)
+
     - let's go with [premium](preference_type)
     - choose [cheapest](preference_type)
-    - select [fastest](preference_type)
+
     - pick [premium](preference_type)
     - go with [cheapest](preference_type)
     - go with [fastest](preference_type)
+
     - go with [premium](preference_type)
 
 - intent: preference_location_input

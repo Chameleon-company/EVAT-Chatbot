@@ -1490,7 +1490,6 @@ class ActionHandleRouteStationSelection(Action):
                              ConversationContexts.PREFERENCE_RESULTS]
             if conversation_context in pref_contexts:
                 displayed = tracker.get_slot("displayed_stations") or []
-                print("displayed", displayed)
                 names = ", ".join([s.get('name')
                                    for s in displayed]) or "the list above"
                 dispatcher.utter_message(
