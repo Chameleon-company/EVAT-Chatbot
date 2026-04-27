@@ -177,7 +177,6 @@ slots:
     mappings:
       - type: custom
 
-  # ⭐ NEW: slot để lưu context cũ
   previous_context:
     type: text
     influence_conversation: false
@@ -223,8 +222,6 @@ actions:
   - action_handle_route_info
   - action_get_directions_by_id
   - action_congestion_prediction
-
-  # ⭐ NEW: 2 action phục vụ interrupt
   - action_store_previous_context
   - action_restore_previous_context
 

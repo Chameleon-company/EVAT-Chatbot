@@ -7,8 +7,8 @@ rules:
 - rule: GLOBAL override — congestion prediction interrupt
   condition: []
   steps:
-    - intent: ask_congestion_prediction
-    - action: action_congestion_prediction
+  - intent: ask_congestion_prediction
+  - action: action_congestion_prediction
 
 # Greeting rule
 - rule: Greet user
@@ -54,8 +54,8 @@ rules:
 # Route info rule - handle when user provides route details
 - rule: Handle route info
   steps:
-    - intent: route_info
-    - action: action_handle_route_info
+  - intent: route_info
+  - action: action_handle_route_info
 
 # Route input rule - handle when user types route in route planning context
 - rule: Handle route input in route planning context
@@ -96,7 +96,7 @@ rules:
 - rule: Handle preference charging
   condition:
   - slot_was_set:
-      - conversation_context: null
+    - conversation_context: null
   steps:
   - intent: preference_charging
   - action: action_handle_menu_selection

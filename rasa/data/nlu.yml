@@ -163,19 +163,15 @@ nlu:
   examples: |
     - [cheapest](preference_type)
     - [fastest](preference_type)
-
     - [premium](preference_type)
     - i prefer [cheapest](preference_type)
     - show [fastest](preference_type)
-
     - let's go with [premium](preference_type)
     - choose [cheapest](preference_type)
     - select [fastest](preference_type)
-
     - pick [premium](preference_type)
     - go with [cheapest](preference_type)
     - go with [fastest](preference_type)
-
     - go with [premium](preference_type)
 
 - intent: preference_location_input
