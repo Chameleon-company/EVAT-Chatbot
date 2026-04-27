@@ -22,7 +22,7 @@ rules:
   - slot_was_set:
     - conversation_context: initial_location_collection
   steps:
-    - action: action_collect_initial_location
+  - action: action_collect_initial_location
 
 # Show initial menu only on fallback when no conversation context
 - rule: Handle initial fallback to menu

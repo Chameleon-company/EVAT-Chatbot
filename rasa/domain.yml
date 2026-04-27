@@ -34,7 +34,6 @@ entities:
   - start_location
   - end_location
   - current_location
-
   - preference_type
   - action_type
   - follow_up_type
@@ -231,7 +230,7 @@ actions:
   - action_traffic_info
   # Advanced directions action
   - action_advanced_directions
-   # Route info action
+  # Route info action
   - action_handle_route_info
   - action_get_directions_by_id
   - action_congestion_prediction
