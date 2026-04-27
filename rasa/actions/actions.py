@@ -1482,12 +1482,15 @@ class ActionHandleRouteStationSelection(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         conversation_context = tracker.get_slot("conversation_context")
         # Allow selection both right after route results and after a comparison view
-        if conversation_context != ConversationContexts.ROUTE_PLANNING_RESULTS:
-
+        if conversation_context not in [
+            ConversationContexts.ROUTE_PLANNING_RESULTS,
+            ConversationContexts.STATION_DETAILS
+        ]:
             pref_contexts = [ConversationContexts.PREFERENCE_CHARGING,
                              ConversationContexts.PREFERENCE_RESULTS]
             if conversation_context in pref_contexts:
                 displayed = tracker.get_slot("displayed_stations") or []
+                print("displayed", displayed)
                 names = ", ".join([s.get('name')
                                    for s in displayed]) or "the list above"
                 dispatcher.utter_message(
@@ -2336,7 +2339,6 @@ class ActionCongestionPrediction(Action):
 
     def run(self, dispatcher, tracker, domain):
 
-        # Lấy location từ entity
         location = tracker.get_slot("location")
 
         if not location:
@@ -2345,34 +2347,24 @@ class ActionCongestionPrediction(Action):
             )
             return []
 
-        # Demo prediction
-        prediction = 0.78
-
-        dispatcher.utter_message(
-            text=f"⚡ Predicted congestion level for **{location}** is **{prediction*100:.0f}%** in the next 30 minutes."
-        )
-
         # ================================
-        # ⭐ XÁC ĐỊNH START LOCATION
+        # ⭐ Identify START LOCATION
         # ================================
         start_location = None
 
-        # 1) Nếu đang ở route planning → dùng start_location slot
         if tracker.get_slot("start_location"):
             start_location = tracker.get_slot("start_location")
 
-        # 2) Nếu có current_location (initial location) → dùng
         elif tracker.get_slot("current_location"):
             start_location = tracker.get_slot("current_location")
 
-        # 3) Nếu có user_lat/lng → dùng toạ độ
         elif tracker.get_slot("user_lat") and tracker.get_slot("user_lng"):
             start_location = (
                 tracker.get_slot("user_lat"),
                 tracker.get_slot("user_lng")
             )
 
-        # 4) Nếu không có start → báo lỗi
+        # If no start location → show error message
         if not start_location:
             dispatcher.utter_message(
                 text="I need your starting location to find charging stations."
@@ -2380,7 +2372,43 @@ class ActionCongestionPrediction(Action):
             return []
 
         # ================================
-        # ⭐ GỌI LẠI ROUTE PLANNING
+        # ⭐ Get real CONGESTION
+        # ================================
+        congestion_value = None
+
+        if REAL_TIME_INTEGRATION_AVAILABLE and real_time_manager:
+            try:
+                traffic = real_time_manager.get_traffic_conditions(
+                    start_location,
+                    location
+                )
+
+                if traffic:
+                    congestion_value = traffic.get("congestion_level")
+
+            except Exception as e:
+                print(f"Error getting real-time congestion: {e}")
+
+        if isinstance(congestion_value, int):
+            level_labels = {
+                0: "Free-flow",
+                1: "Light congestion",
+                2: "Moderate congestion",
+                3: "Heavy congestion"
+            }
+
+            congestion_text = level_labels.get(congestion_value, "Unknown")
+
+            dispatcher.utter_message(
+                text=f"🚦 Current congestion level for **{location}** is **{congestion_text}**."
+            )
+        else:
+            dispatcher.utter_message(
+                text=f"⚠️ Real-time congestion data for **{location}** is unavailable right now."
+            )
+
+        # ================================
+        # ⭐ Recall ROUTE PLANNING
         # ================================
         try:
             stations = data_service.get_route_stations(
@@ -2408,7 +2436,7 @@ class ActionCongestionPrediction(Action):
 
             else:
                 dispatcher.utter_message(
-                    text=f"⚡ No charging stations found for route to {location}."
+                    text=f"No charging stations found for route to {location}."
                 )
                 return []
 
