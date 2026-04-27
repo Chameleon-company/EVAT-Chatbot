@@ -2,6 +2,11 @@ rasa_env/
 __pycache__/
 *.pyc
 .env
+*.env
 .DS_Store
 rasa/.rasa/
+rasa/.cache/
+rasa/.config/
 rasa/models/
+apps/EVAT_Flask/
+cloudbuild.yaml
