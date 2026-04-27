@@ -1,17 +1,51 @@
-name: Train Rasa Model (linux/amd64)
+name: Deploy EVAT Chatbot to GCP
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'rasa/**'
+      - 'Dockerfile.*'
+
+env:
+  PROJECT_ID: sit-26t1-rasa-chatbot-5c0c042
+  REGION: australia-southeast1
+  AR_REPO: evat-chatbot
+  ACTIONS_SERVICE: evat-actions
+  RASA_SERVICE: evat-rasa
 
 jobs:
-  train:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Train model inside rasa/rasa:3.6.15 container
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Ensure Artifact Registry repo exists
+        run: |
+          gcloud artifacts repositories describe ${{ env.AR_REPO }} \
+            --location=${{ env.REGION }} --project=${{ env.PROJECT_ID }} > /dev/null 2>&1 || \
+          gcloud artifacts repositories create ${{ env.AR_REPO }} \
+            --repository-format=docker \
+            --location=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }}
+
+      - name: Train Rasa model (linux/amd64)
         run: |
           docker run --rm \
             --user root \
@@ -24,9 +58,66 @@ jobs:
             --fixed-model-name cloud-model
           sudo chmod 644 ${{ github.workspace }}/rasa/models/cloud-model.tar.gz
 
-      - name: Upload model artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cloud-model
-          path: rasa/models/cloud-model.tar.gz
-          retention-days: 7
+      - name: Build and push Actions Server image
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.ACTIONS_SERVICE }}:latest
+          docker build --platform=linux/amd64 -f Dockerfile.actions -t $IMAGE .
+          docker push $IMAGE
+
+      - name: Deploy Actions Server to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.ACTIONS_SERVICE }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.ACTIONS_SERVICE }}:latest \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --port=5055 \
+            --memory=1Gi \
+            --cpu=1 \
+            --min-instances=0 \
+            --max-instances=3 \
+            --set-env-vars="TOMTOM_API_KEY=${{ secrets.TOMTOM_API_KEY }}"
+
+      - name: Get Actions Server URL
+        id: actions-url
+        run: |
+          URL=$(gcloud run services describe ${{ env.ACTIONS_SERVICE }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format="value(status.url)")
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Build and push Rasa Server image
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.RASA_SERVICE }}:latest
+          docker build --platform=linux/amd64 -f Dockerfile.rasa -t $IMAGE .
+          docker push $IMAGE
+
+      - name: Deploy Rasa Server to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.RASA_SERVICE }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.AR_REPO }}/${{ env.RASA_SERVICE }}:latest \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --port=5005 \
+            --memory=4Gi \
+            --cpu=2 \
+            --min-instances=1 \
+            --max-instances=3 \
+            --timeout=300 \
+            --set-env-vars="RASA_ACTIONS_URL=${{ steps.actions-url.outputs.url }}"
+
+      - name: Print deployment summary
+        run: |
+          RASA_URL=$(gcloud run services describe ${{ env.RASA_SERVICE }} \
+            --region=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --format="value(status.url)")
+          echo "=========================================="
+          echo "DEPLOYMENT COMPLETE"
+          echo "=========================================="
+          echo "Rasa URL:    $RASA_URL"
+          echo "Actions URL: ${{ steps.actions-url.outputs.url }}"
+          echo "Webhook:     $RASA_URL/webhooks/rest/webhook"
+          echo "=========================================="

@@ -12,9 +12,13 @@ COPY rasa/endpoints.cloud.yml ./endpoints.yml
 COPY rasa/data/ ./data/
 COPY rasa/models/cloud-model.tar.gz ./models/
 
+# Startup script patches dask before Rasa loads to fix model loading error
+COPY rasa/startup.py ./startup.py
+
 USER 1001
 
 EXPOSE 5005
 
 # RASA_ACTIONS_URL is injected at deploy time via --set-env-vars
+ENTRYPOINT ["python3", "/app/startup.py"]
 CMD ["run", "--enable-api", "--cors", "*", "--port", "5005"]
