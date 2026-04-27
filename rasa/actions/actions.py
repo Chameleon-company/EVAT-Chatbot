@@ -1552,22 +1552,28 @@ class ActionHandleRouteStationSelection(Action):
                 # Try match against displayed snapshot first
                 if displayed:
                     for s in displayed:
-                        name = (s.get('name') or '').lower()
-                        if selected_station_name.lower() in name or name in selected_station_name.lower():
+                        name = self._normalize_station_name(s.get('name'))
+                        selected_name = self._normalize_station_name(selected_station_name)
+
+                        if selected_name in name or name in selected_name:
                             # find full station dict from current stations by name
                             selected_station = next((st for st in stations if (
-                                st.get('name', '').lower() == name)), None)
+                                self._normalize_station_name(st.get('name', '')) == name)), None)
+
                             if not selected_station:
-                                # fallback to first partial match
-                                selected_station = next(
-                                    (st for st in stations if name in st.get('name', '').lower()), None)
+                                 # fallback to first partial match
+                                  selected_station = next(
+                                        (st for st in stations if name in self._normalize_station_name(st.get('name', ''))), None)
+                                        
                             break
-                # Fallback to current stations list if not found via snapshot
                 if not selected_station:
-                    for station in stations:
-                        if selected_station_name.lower() in station.get('name', '').lower():
-                            selected_station = station
-                            break
+                  for station in stations:
+                    station_name = self._normalize_station_name(station.get('name'))
+                    selected_name = self._normalize_station_name(selected_station_name)
+
+                    if selected_name in station_name or station_name in selected_name:
+                      selected_station = station
+                      break
 
                 if selected_station:
                     if decision_requested:
@@ -1631,6 +1637,14 @@ class ActionHandleRouteStationSelection(Action):
             dispatcher.utter_message(
                 text="Unable to process station selection. Please try again.")
             return []
+
+    def _normalize_station_name(self, text: str) -> str:
+        text = (text or "").lower().strip()
+        text = text.replace("centre", "center")
+        text = text.replace("&", "and")
+        text = text.replace("-", " ")
+        text = " ".join(text.split())
+        return text
 
     def _extract_station_name(self, message: str) -> Optional[str]:
         message = message.strip()

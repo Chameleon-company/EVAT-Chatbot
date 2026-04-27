@@ -375,16 +375,16 @@ window.onload = async () => {
   addMessage("Please accept the location permission when prompted.", "bot");
 
   try {
-    const loc = await getUserLocation();
-    userLocation = { lat: loc.coords.latitude, lng: loc.coords.longitude };
-    addMessage("✅ **Location detected!** Now I can help you find the best charging options.", "bot");
-    await sendLocationToRasa();
-  } catch (e) {
-    addMessage(
-      "⚠️ Location access denied. Please type your suburb name (e.g., 'Richmond') to continue.",
-      "bot"
-    );
-  }
+  const loc = await getUserLocation();
+  userLocation = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+  // addMessage("✅ **Location detected!** Now I can help you find the best charging options.", "bot");
+  await sendLocationToRasa();
+} catch (e) {
+  addMessage(
+    "⚠️ Location access denied. Please type your suburb name (e.g., 'Richmond') to continue.",
+    "bot"
+  );
+}
 };
 
 /* ---------- Messaging ---------- */
