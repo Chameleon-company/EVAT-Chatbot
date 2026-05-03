@@ -240,6 +240,18 @@ rules:
   - intent: get_traffic_info
   - action: action_traffic_info
 
+# Affirm after traffic prompt → show traffic
+- rule: Affirm triggers traffic info
+  steps:
+  - intent: affirm
+  - action: action_traffic_info
+
+# Deny after traffic prompt → goodbye
+- rule: Deny triggers goodbye
+  steps:
+  - intent: deny
+  - action: utter_goodbye
+
 # Advanced directions rule
 - rule: Handle advanced directions
   steps:

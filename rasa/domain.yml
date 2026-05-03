@@ -27,6 +27,8 @@ intents:
   # Advanced directions intent
   - get_advanced_directions
   - get_directions
+  - affirm
+  - deny
 
 entities:
   - menu_option

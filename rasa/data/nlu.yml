@@ -54,6 +54,33 @@ nlu:
     - preference charging
 
 
+- intent: affirm
+  examples: |
+    - yes
+    - yeah
+    - yep
+    - sure
+    - ok
+    - okay
+    - yes please
+    - yes thanks
+    - go ahead
+    - sounds good
+    - absolutely
+    - definitely
+    - of course
+
+- intent: deny
+  examples: |
+    - no
+    - nope
+    - no thanks
+    - not now
+    - skip it
+    - never mind
+    - no thank you
+    - nah
+
 - intent: goodbye
   examples: |
     - bye
@@ -62,7 +89,6 @@ nlu:
     - goodbye
     - thanks bye
     - see you
-    - no thanks
     - thank you
 
 - intent: route_info
