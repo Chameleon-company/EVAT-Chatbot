@@ -570,52 +570,45 @@ class ChargingStationDataService:
             lat_col = DATA_CONFIG['CSV_COLUMNS']['LATITUDE']
             lon_col = DATA_CONFIG['CSV_COLUMNS']['LONGITUDE']
 
-            # 1) Exact/contains match by station name
+            # 1) Exact/contains match by suburb (checked first — users type suburbs, not station names)
             try:
-                mask = self.charger_data[name_col].astype(
-                    str).str.lower().str.contains(location_clean, na=False)
+                sub_lower = self.charger_data[suburb_col].astype(str).str.lower()
+                mask = (sub_lower == location_clean) | sub_lower.str.contains(location_clean, na=False)
                 rows = self.charger_data[mask]
                 if not rows.empty:
                     row = rows.iloc[0]
                     lat = float(row.get(lat_col, 0))
                     lon = float(row.get(lon_col, 0))
                     if lat != 0 and lon != 0:
-                        logger.info(
-                            f"Found coordinates from station name: '{row.get(name_col)}' → ({lat}, {lon})")
+                        logger.info(f"Found coordinates from suburb: '{row.get(suburb_col)}' → ({lat}, {lon})")
                         return (lat, lon)
             except Exception:
                 pass
 
             # 2) Contains match by address
             try:
-                mask = self.charger_data[addr_col].astype(
-                    str).str.lower().str.contains(location_clean, na=False)
+                mask = self.charger_data[addr_col].astype(str).str.lower().str.contains(location_clean, na=False)
                 rows = self.charger_data[mask]
                 if not rows.empty:
                     row = rows.iloc[0]
                     lat = float(row.get(lat_col, 0))
                     lon = float(row.get(lon_col, 0))
                     if lat != 0 and lon != 0:
-                        logger.info(
-                            f"Found coordinates from address: '{row.get(addr_col)}' → ({lat}, {lon})")
+                        logger.info(f"Found coordinates from address: '{row.get(addr_col)}' → ({lat}, {lon})")
                         return (lat, lon)
             except Exception:
                 pass
 
-            # 3) Exact/contains match by suburb
+            # 3) Exact/contains match by station name (last resort)
             try:
-                sub_lower = self.charger_data[suburb_col].astype(
-                    str).str.lower()
-                mask = (sub_lower == location_clean) | sub_lower.str.contains(
-                    location_clean, na=False)
+                mask = self.charger_data[name_col].astype(str).str.lower().str.contains(location_clean, na=False)
                 rows = self.charger_data[mask]
                 if not rows.empty:
                     row = rows.iloc[0]
                     lat = float(row.get(lat_col, 0))
                     lon = float(row.get(lon_col, 0))
                     if lat != 0 and lon != 0:
-                        logger.info(
-                            f"Found coordinates from suburb: '{row.get(suburb_col)}' → ({lat}, {lon})")
+                        logger.info(f"Found coordinates from station name: '{row.get(name_col)}' → ({lat}, {lon})")
                         return (lat, lon)
             except Exception:
                 pass

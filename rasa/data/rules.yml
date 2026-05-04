@@ -311,4 +311,12 @@ rules:
     - conversation_context: preference_charging
   steps:
   - intent: nlu_fallback
-  - action: utter_ask_rephrase
+  - action: action_handle_preference_location_input
+
+- rule: Handle route-style input as preference location when waiting for location
+  condition:
+  - slot_was_set:
+    - conversation_context: preference_charging
+  steps:
+  - intent: route_station_selection
+  - action: action_handle_preference_location_input

@@ -972,97 +972,58 @@ class ActionHandleEmergencyLocationInput(Action):
 
             if stations:
                 if connector:
-                    # Find closest station with matching connector
-                    best_station = None
-                    for st in stations:
-                        conn_str = str(st.get('connection_types', '')).lower()
-                        power_str = str(st.get('power', '')).lower()
-
-                        # Check if connector matches (including numeric codes)
-                        if self._connector_matches(connector, conn_str, power_str):
-                            best_station = st
-                            break
-
-                    if best_station:
-                        # Show station details with immediate directions and real-time traffic option
-                        response = f"🚨 Closest {connector.upper()} station near {current_location}:\n\n"
-                        response += f"🔌 **{best_station.get('name', 'Unknown')}**\n"
-                        response += f"📍 {best_station.get('address', 'Address available')}\n"
-                        response += f"⚡ {best_station.get('power', 'Power info available')}\n"
-                        response += f"💰 {best_station.get('cost', 'Cost info available')}\n"
-                        response += f"🔌 Connector: {connector.upper()}\n\n"
-
-                        # Add directions immediately
-                        maps_link = ActionAdvancedDirections()._build_maps_link(
-                            current_location, best_station.get(
-                                'address') or best_station.get('name')
+                    # Collect all stations with matching connector (up to 3)
+                    matched = [
+                        st for st in stations
+                        if self._connector_matches(
+                            connector,
+                            str(st.get('connection_types', '')).lower(),
+                            str(st.get('power', '')).lower()
                         )
-                        response += f"🧭 **Directions:** {maps_link}\n\n"
+                    ][:3]
 
-                        # Ask about real-time traffic (using same trigger words as flow 1)
-                        response += "**Would you like real-time traffic information?**\n\n"
-                        response += "• Type 'traffic update' or 'traffic conditions' for real-time details\n"
-                        response += "• Type 'no' or 'skip' to continue"
-
-                        dispatcher.utter_message(text=response)
+                    if matched:
+                        closest = matched[0]
+                        closest_dest = closest.get('address') or closest.get('name')
+                        dispatcher.utter_message(
+                            text=f"🚨 Nearest {connector.upper()} compatible stations near your location.\n"
+                                 f"🔌 Connector: {connector.upper()} — Tap a card or type a station name.")
+                        _send_station_cards(dispatcher, matched, limit=3)
                         return [
-                            SlotSet("selected_station",
-                                    best_station.get('name')),
-                            SlotSet("conversation_context",
-                                    ConversationContexts.EMERGENCY_RESULTS),
+                            SlotSet("conversation_context", ConversationContexts.EMERGENCY_RESULTS),
+                            SlotSet("displayed_stations", matched),
                             SlotSet("start_location", current_location),
-                            SlotSet("end_location", best_station.get(
-                                'address') or best_station.get('name'))
+                            SlotSet("end_location", closest_dest),
+                            SlotSet("selected_station", closest.get('name'))
                         ]
                     else:
-                        # No connector match found - show user-friendly message
+                        # No connector match — fall back to nearest stations without filtering
+                        closest = stations[0]
+                        closest_dest = closest.get('address') or closest.get('name')
                         dispatcher.utter_message(
-                            text=f"❌ No {connector.upper()} compatible stations found near your location.\n\n"
-                                 f"💡 Try a different connector type or check nearby stations without connector filtering.")
-                        return []
+                            text=f"⚠️ No {connector.upper()} compatible stations found nearby. "
+                                 f"Here are the closest stations:")
+                        _send_station_cards(dispatcher, stations, limit=3)
+                        return [
+                            SlotSet("conversation_context", ConversationContexts.EMERGENCY_RESULTS),
+                            SlotSet("displayed_stations", stations[:3]),
+                            SlotSet("start_location", current_location),
+                            SlotSet("end_location", closest_dest),
+                            SlotSet("selected_station", closest.get('name'))
+                        ]
                 else:
-                    # No connector specified, show closest station
-                    best_station = stations[0]
-
-                    # Build maps link for directions
-                    maps_link = ActionAdvancedDirections()._build_maps_link(
-                        current_location, best_station.get(
-                            'address') or best_station.get('name')
-                    )
-
-                    # Get real-time traffic information
-                    traffic_line = "🚦 Traffic: unavailable right now"
-                    try:
-                        if REAL_TIME_INTEGRATION_AVAILABLE and real_time_manager:
-                            # Use station address for traffic calculation
-                            destination_hint = best_station.get(
-                                'address') or best_station.get('name')
-                            traffic = real_time_manager.get_traffic_conditions(
-                                current_location, destination_hint)
-                            if traffic:
-                                status = traffic.get(
-                                    'traffic_status', 'Unknown')
-                                speed = traffic.get('current_speed_kmh', 0)
-                                delay = traffic.get(
-                                    'estimated_delay_minutes', 0)
-                                src = traffic.get('data_source') or 'Real-time'
-                                traffic_line = f"🚦 Traffic: {status} • {speed} km/h • +{delay} min | {src}"
-                    except Exception as _:
-                        pass
-
-                    response = f"🚨 Closest station near {current_location}:\n\n"
-                    response += f"🔌 **{best_station.get('name', 'Unknown')}**\n"
-                    response += f"📍 {best_station.get('address', 'Address available')}\n"
-                    response += f"⚡ {best_station.get('power', 'Power info available')}\n"
-                    response += f"💰 {best_station.get('cost', 'Cost info available')}\n"
-                    response += f"{traffic_line}\n"
-                    response += f"🔗 {maps_link}"
-
-                    dispatcher.utter_message(text=response)
+                    # No connector specified — show 3 nearest stations
+                    closest = stations[0]
+                    closest_dest = closest.get('address') or closest.get('name')
+                    dispatcher.utter_message(
+                        text="🚨 Nearest charging stations near your location. Tap a card or type a station name.")
+                    _send_station_cards(dispatcher, stations, limit=3)
                     return [
-                        SlotSet("selected_station", best_station.get('name')),
-                        SlotSet("conversation_context",
-                                ConversationContexts.STATION_DETAILS)
+                        SlotSet("conversation_context", ConversationContexts.EMERGENCY_RESULTS),
+                        SlotSet("displayed_stations", stations[:3]),
+                        SlotSet("start_location", current_location),
+                        SlotSet("end_location", closest_dest),
+                        SlotSet("selected_station", closest.get('name'))
                     ]
             else:
                 dispatcher.utter_message(
@@ -1171,34 +1132,30 @@ class ActionHandleEmergencyLocationInput(Action):
         if connector in conn_str or connector in power_str:
             return True
 
-        # Numeric code mapping for Type 2 (Mennekes)
+        # Numeric code mapping for Type 2 (Mennekes) — OpenChargeMap ID 25
         if connector == 'type 2':
-            # IEC 62196 Type 2 codes: 2, 25, 33
-            type2_codes = ['2', '25', '33']
+            type2_codes = ['25', '1036']
             for code in type2_codes:
                 if code in conn_str:
                     return True
 
-        # Numeric code mapping for CCS
+        # Numeric code mapping for CCS — OpenChargeMap ID 33 (CCS2 used in AU)
         elif connector == 'ccs':
-            # CCS codes: 1, 21, 31
-            ccs_codes = ['1', '21', '31']
+            ccs_codes = ['33', '1', '21', '31']
             for code in ccs_codes:
                 if code in conn_str:
                     return True
 
-        # Numeric code mapping for CHAdeMO
+        # Numeric code mapping for CHAdeMO — OpenChargeMap ID 2
         elif connector == 'chademo':
-            # CHAdeMO codes: 4, 24, 34
-            chademo_codes = ['4', '24', '34']
+            chademo_codes = ['2', '4', '24', '34']
             for code in chademo_codes:
                 if code in conn_str:
                     return True
 
-        # Numeric code mapping for Tesla
+        # Numeric code mapping for Tesla — Superchargers use CCS2 (33) in AU
         elif connector == 'tesla':
-            # Tesla codes: 5, 25, 35
-            tesla_codes = ['5', '25', '35']
+            tesla_codes = ['33', '1036']
             for code in tesla_codes:
                 if code in conn_str:
                     return True
@@ -2183,6 +2140,10 @@ class ActionTrafficInfo(Action):
             )
             return []
 
+        # Show "your current location" instead of raw GPS coordinates
+        import re as _re
+        start_label = "your current location" if _re.match(r'^\(?\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\s*\)?$', str(start_location).strip()) else start_location
+
         if REAL_TIME_INTEGRATION_AVAILABLE and real_time_manager:
             try:
                 traffic = real_time_manager.get_traffic_conditions(
@@ -2196,15 +2157,12 @@ class ActionTrafficInfo(Action):
                     free_flow_speed = traffic.get("free_flow_speed_kmh")
 
                     details: List[str] = []
-                    details.append(
-                        f"🚦 Traffic: {start_location} → {end_location}"
-                    )
+                    details.append(f"🚦 Traffic: {start_label} → {end_location}")
                     details.append(f"• Status: {status}")
                     if congestion is not None:
                         details.append(f"• Congestion level: {congestion}")
                     if isinstance(delay_min, (int, float)) and delay_min >= 0:
-                        details.append(
-                            f"• Estimated delay: {int(delay_min)} min")
+                        details.append(f"• Estimated delay: {int(delay_min)} min")
                     if isinstance(current_speed, (int, float)) and isinstance(free_flow_speed, (int, float)):
                         details.append(
                             f"• Speed: {int(current_speed)} km/h (free-flow {int(free_flow_speed)} km/h)"
@@ -2217,12 +2175,10 @@ class ActionTrafficInfo(Action):
                 print(f"Error in ActionTrafficInfo: {e}")
 
         dispatcher.utter_message(
-            text=(
-                f"🚦 Traffic information for {start_location} → {end_location} is unavailable right now."
-            )
+            text=f"🚦 Real-time traffic to {end_location} is unavailable right now.\n\n"
+                 f"You can still tap **Get Directions** on any station card to navigate there."
         )
-        dispatcher.utter_message(text=Messages.GOODBYE)
-        return [SlotSet("conversation_context", ConversationContexts.ENDED)]
+        return []
 
 
 class ActionEnhancedChargerInfo(Action):
