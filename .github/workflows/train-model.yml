@@ -94,8 +94,8 @@ jobs:
             --port=5005 \
             --memory=4Gi \
             --cpu=2 \
-            --min-instances=1 \
-            --max-instances=3 \
+            --min-instances=0 \
+            --max-instances=1 \
             --timeout=300 \
             --set-env-vars="RASA_ACTIONS_URL=${{ steps.actions-url.outputs.url }}"
 
