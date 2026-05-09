@@ -2268,3 +2268,33 @@ class ActionEnhancedPreferenceFiltering(Action):
             )
             return [SlotSet("conversation_context", ConversationContexts.ENDED)]
         return []
+
+class ActionContextualHelp(Action):
+
+    def name(self):
+        return "action_contextual_help"
+
+    def run(self, dispatcher, tracker, domain):
+        context = tracker.get_slot("conversation_context")
+
+        if context == "route_planning":
+            dispatcher.utter_message(
+                text="You are currently in route planning. Please provide your starting location and destination so I can help find suitable EV charging stations for your trip."
+            )
+
+        elif context == "emergency_charging":
+            dispatcher.utter_message(
+                text="You are currently using emergency charging support. Please provide your current location and charger type so I can help find nearby charging options."
+            )
+
+        elif context == "preference_charging":
+            dispatcher.utter_message(
+                text="You are currently using preference-based charging. You can choose options such as cheapest, fastest, or premium charging stations."
+            )
+
+        else:
+            dispatcher.utter_message(
+                text="I can help you with EV route planning, nearby charging stations, emergency charging, traffic information, and directions. You can type 'plan a route', 'find a charger', or 'explain route planning'."
+            )
+
+        return []

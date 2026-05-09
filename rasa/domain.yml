@@ -31,6 +31,8 @@ intents:
   - get_directions
   - affirm
   - deny
+  - ask_help
+  - explain_route_planning
 
 entities:
   - menu_option
@@ -193,6 +195,13 @@ responses:
   utter_goodbye:
     - text: "Goodbye! Have a great journey! 🚗⚡"
 
+  utter_explain_route_planning:
+    - text: "Route planning helps you find suitable EV charging stations for your trip. You can tell me your starting location and destination, and I can help show charging options, traffic information, and directions."
+
+
+
+
+
 
 
 actions:
@@ -221,6 +230,7 @@ actions:
   # Route info action
   - action_handle_route_info
   - action_get_directions_by_id
+  - action_contextual_help
 
 session_config:
   session_expiration_time: 60

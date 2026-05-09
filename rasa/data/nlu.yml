@@ -899,7 +899,33 @@ nlu:
     - complete please
     - finish please
     - end please
+- intent: ask_help
+  examples: |
+    - help
+    - I need help
+    - can you help me
+    - what can you do
+    - what can this chatbot do
+    - how does this chatbot work
+    - I am confused
+    - show me help
+    - guide me
+    - I need some guidance
+    - what options do I have
+    - explain how to use this chatbot
 
+- intent: explain_route_planning
+  examples: |
+    - explain route planning
+    - how does route planning work
+    - what is route planning
+    - help me with route planning
+    - how can I plan a route
+    - how do I use the route planner
+    - tell me about route planning
+    - explain how to find charging stations on my route
+    - how can the chatbot help with my trip
+    - what information do I need for route planning
 
 - lookup: charging_speed
   examples: |
