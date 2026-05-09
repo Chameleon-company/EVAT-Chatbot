@@ -289,3 +289,17 @@ rules:
   steps:
   - intent: deny
   - action: action_handle_follow_up
+- rule: Respond to help request
+  steps:
+    - intent: ask_help
+    - action: action_contextual_help
+
+- rule: Explain route planning
+  steps:
+    - intent: explain_route_planning
+    - action: utter_explain_route_planning
+
+- rule: Restart conversation
+  steps:
+    - intent: restart
+    - action: action_restart
