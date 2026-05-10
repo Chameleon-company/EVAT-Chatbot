@@ -3,6 +3,7 @@ version: "3.1"
 intents:
   - greet
   - menu_selection
+  - current_location
   - route_planning
   - route_info
   - emergency_charging
@@ -221,6 +222,7 @@ actions:
   - action_handle_route_info
   - action_get_directions_by_id
   - action_contextual_help
+  - action_nearby_stations
 
 session_config:
   session_expiration_time: 60

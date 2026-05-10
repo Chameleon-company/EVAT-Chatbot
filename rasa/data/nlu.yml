@@ -949,6 +949,33 @@ nlu:
     - explain how to find charging stations on my route
     - how can the chatbot help with my trip
     - what information do I need for route planning
+    
+    
+    
+- intent: current_location
+  examples: |
+    - Richmond
+    - Carlton
+    - Geelong
+    - Box Hill
+    - Melbourne
+    - St Kilda
+    - Brighton
+    - Dandenong
+    - Docklands
+    - Frankston
+    - South Yarra
+    - Burwood
+    - in Richmond
+    - in Carlton
+    - in Geelong
+    - in Box Hill
+    - in Melbourne
+    - my location is Richmond
+    - my location is Carlton
+    - I am in Richmond
+    - I am in Carlton
+    - I am in Geelong
 
 - lookup: charging_speed
   examples: |
