@@ -1485,7 +1485,7 @@ class ActionHandleRouteStationSelection(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         conversation_context = tracker.get_slot("conversation_context")
         # Allow selection both right after route results and after a comparison view
-        if conversation_context not in [ ConversationContexts.ROUTE_PLANNING_RESULTS, ConversationContexts.STATION_DETAILS]:
+        if conversation_context not in [ConversationContexts.ROUTE_PLANNING_RESULTS, ConversationContexts.STATION_DETAILS]:
             pref_contexts = [ConversationContexts.PREFERENCE_CHARGING,
                              ConversationContexts.PREFERENCE_RESULTS]
             if conversation_context in pref_contexts:
