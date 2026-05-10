@@ -70,6 +70,15 @@ nlu:
     - journey planning
     - trip planning
 
+    - to [Box Hill](end_location)
+    - to [Richmond](end_location)
+    - to [Carlton](end_location)
+    - to [Southbank](end_location)
+    - go to [Box Hill](end_location)
+    - drive to [Richmond](end_location)
+    - route to [Southbank](end_location)
+    - from [Melbourne](start_location) to [Box Hill](end_location)
+
 - intent: emergency_charging
   examples: |
     - battery low
@@ -551,32 +560,61 @@ nlu:
     - can you predict congestion
     - show me congestion prediction
     - I want congestion prediction
+    - predict congestion
+    - check congestion
+    - traffic congestion prediction
+    - check traffic congestion
+    - current traffic congestion
+    - what is the congestion level
+    - what is the crowd level
+    - is it busy
+    - is it crowded
+    - how busy is it
+    - how crowded is it
+
     - predict congestion for [Box Hill](location)
-    - give me congestion prediction for [Box Hill](location)
-    - what is the congestion level at [Box Hill](location)
-    - how busy is [Box Hill](location)
-    - is [Box Hill](location) crowded
-    - check congestion at [Box Hill](location)
-    - congestion status at [Box Hill](location)
-    - congestion forecast for [Box Hill](location)
-    - what is the crowd level at [Box Hill](location)
-    - how crowded is [Box Hill](location)
-    - is there heavy congestion at [Box Hill](location)
-    - show congestion level for [Box Hill](location)
-    - give me the congestion forecast for [Box Hill](location)
-    - check how busy [Box Hill](location) is
-    - tell me the congestion prediction for [Box Hill](location)
-    - what is the expected congestion at [Box Hill](location)
-    - forecast congestion for [Box Hill](location)
-    - is [Box Hill](location) busy right now
-    - how much congestion is there at [Box Hill](location)
-    - congestion at [Box Hill](location)
-    - crowd prediction for [Box Hill](location)
-    - traffic congestion prediction for [Box Hill](location)
+    - give me congestion prediction for [Richmond](location)
+    - congestion prediction for [Carlton](location)
     - congestion prediction to [Box Hill](location)
-    - predict congestion for [Richmond](location)
-    - congestion at [Docklands](location)
-    - how busy is [Carlton](location)
+    - traffic congestion prediction for [Southbank](location)
+    - traffic congestion to [Port Melbourne](location)
+    - congestion at [Brunswick](location)
+    - check congestion at [Dandenong](location)
+    - congestion status at [Geelong](location)
+    - congestion forecast for [Ballarat](location)
+    - crowd prediction for [Bendigo](location)
+
+    - is [Box Hill](location) busy
+    - is [Richmond](location) busy right now
+    - is [Carlton](location) crowded
+    - is [Southbank](location) congested
+    - how busy is [Port Melbourne](location)
+    - how crowded is [Brunswick](location)
+    - how much congestion is there at [Dandenong](location)
+    - check how busy [Geelong](location) is
+
+- intent: get_charging_insights
+  examples: |
+    - charging insights
+    - show me charging insights
+    - give me charging insights
+    - when is the best time to charge
+    - when should I charge
+    - what time should I charge
+    - when is this station busy
+    - when is this charger busy
+    - when is this charging station busy
+    - what are the peak charging hours
+    - what are the quiet charging hours
+    - when is it less busy
+    - when is it quiet
+    - is this station busy now
+    - is this charger busy now
+    - tell me the best charging time
+    - recommend a charging time
+    - when should I use this station
+    - when should I avoid charging
+    - what time is best for charging
 
 - lookup: charging_speed
   examples: |
@@ -726,3 +764,170 @@ nlu:
     - high occupancy
     - heavy load
     - high usage
+
+# This synonym lookup allows the model to recognize different variations of "Box Hill" as the same location entity, improving the accuracy of congestion predictions for that location.
+- synonym: Box Hill
+  examples: |
+    - boxhill
+    - Boxhill
+    - box hill
+    - Box Hill
+    - boxhil
+    - box hil
+
+- synonym: Richmond
+  examples: |
+    - rich
+    - richmond
+    - Richmond
+
+- synonym: Carlton
+  examples: |
+    - carl
+    - carlton
+    - Carlton
+
+- synonym: Southbank
+  examples: |
+    - south bank
+    - South Bank
+    - southbank
+    - Southbank
+
+- synonym: Port Melbourne
+  examples: |
+    - port melbourne
+    - Port Melbourne
+    - portmelbourne
+    - Portmelbourne
+
+- synonym: Brunswick
+  examples: |
+    - brunswick
+    - Brunswick
+    - bruns
+    - bruns wick
+
+- synonym: Dandenong
+  examples: |
+    - dandy
+    - dandenong
+    - Dandenong
+
+- synonym: Geelong
+  examples: |
+    - geelong
+    - Geelong
+
+- synonym: Ballarat
+  examples: |
+    - ballarat
+    - Ballarat
+
+- synonym: Bendigo
+  examples: |
+    - bendigo
+    - Bendigo
+
+- synonym: Melbourne
+  examples: |
+    - mel
+    - melb
+    - melbourne
+    - Melbourne
+    - melbourne cbd
+    - Melbourne CBD
+    - cbd
+    - CBD
+
+- synonym: St Kilda
+  examples: |
+    - stkilda
+    - Stkilda
+    - st kilda
+    - St Kilda
+    - saint kilda
+    - Saint Kilda
+
+- synonym: Glen Waverley
+  examples: |
+    - glen waverley
+    - Glen Waverley
+    - glenwaverley
+    - Glenwaverley
+
+- synonym: Chadstone
+  examples: |
+    - chaddy
+    - chadstone
+    - Chadstone
+
+- synonym: Docklands
+  examples: |
+    - dockland
+    - Dockland
+    - docklands
+    - Docklands
+
+- synonym: Hawthorn
+  examples: |
+    - hawthorn
+    - Hawthorn
+
+- synonym: Camberwell
+  examples: |
+    - camberwell
+    - Camberwell
+
+- synonym: Brighton
+  examples: |
+    - brighton
+    - Brighton
+
+- synonym: Cheltenham
+  examples: |
+    - cheltenham
+    - Cheltenham
+
+- synonym: Bundoora
+  examples: |
+    - bundoora
+    - Bundoora
+
+- synonym: Frankston
+  examples: |
+    - frankston
+    - Frankston
+
+- synonym: Werribee
+  examples: |
+    - werribee
+    - Werribee
+
+- synonym: Ringwood
+  examples: |
+    - ringwood
+    - Ringwood
+
+- synonym: Point Cook
+  examples: |
+    - point cook
+    - Point Cook
+    - pointcook
+    - Pointcook
+
+- synonym: Sunshine West
+  examples: |
+    - sunshine west
+    - Sunshine West
+    - sunshinewest
+    - Sunshinewest
+
+- synonym: Airport West
+  examples: |
+    - airport west
+    - Airport West
+    - airportwest
+    - Airportwest
+
+
