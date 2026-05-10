@@ -1,12 +1,15 @@
 from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet, FollowupAction
 from rasa_sdk.executor import CollectingDispatcher
-from typing import Any, Text, Dict, List, Optional, Tuple
+from typing import Any, Text, Dict, List, Optional, Tuple, Optional
 from urllib.parse import quote_plus
 import logging
 
 from actions.data_service import data_service
 from actions.constants import ConversationContexts, MainMenuOptions, PreferenceTypes, ActionTypes, Messages
+import pandas as pd
+from pathlib import Path
+from difflib import SequenceMatcher
 
 # Import real-time integration
 try:
@@ -1483,7 +1486,6 @@ class ActionHandleRouteStationSelection(Action):
         conversation_context = tracker.get_slot("conversation_context")
         # Allow selection both right after route results and after a comparison view
         if conversation_context not in [ConversationContexts.ROUTE_PLANNING_RESULTS, ConversationContexts.STATION_DETAILS]:
-
             pref_contexts = [ConversationContexts.PREFERENCE_CHARGING,
                              ConversationContexts.PREFERENCE_RESULTS]
             if conversation_context in pref_contexts:
@@ -1637,7 +1639,8 @@ class ActionHandleRouteStationSelection(Action):
         response += "**🎯 What would you like to do next?**\n\n"
         response += "• Type 'get directions' to this station 🧭\n"
         response += "• Type 'compare options' 📊\n"
-        response += "• Type 'check availability' ✅"
+        response += "• Type 'check availability' ✅ \n"
+        response += "• Type 'charging insights' ⚡"
 
         dispatcher.utter_message(text=response)
         return [
@@ -2301,3 +2304,604 @@ class ActionEnhancedPreferenceFiltering(Action):
             )
             return [SlotSet("conversation_context", ConversationContexts.ENDED)]
         return []
+
+# ============================================================
+# NEW ACTIONS FOR INTERRUPT + RESUME FLOW
+# ============================================================
+
+class ActionStorePreviousContext(Action):
+    def name(self) -> Text:
+        return "action_store_previous_context"
+
+    def run(self, dispatcher, tracker, domain):
+        current_context = tracker.get_slot("conversation_context")
+        return [SlotSet("previous_context", current_context)]
+
+
+class ActionRestorePreviousContext(Action):
+    def name(self) -> Text:
+        return "action_restore_previous_context"
+
+    def run(self, dispatcher, tracker, domain):
+        prev = tracker.get_slot("previous_context")
+        return [SlotSet("conversation_context", prev)]
+
+
+def _normalise_congestion_location(location: Optional[str]) -> Optional[str]:
+    """
+    Normalise location text for congestion prediction only.
+    This does not affect route planning or other flows.
+    """
+    if not location:
+        return None
+
+    value = str(location).strip().strip(" ?.,!")
+
+    if not value:
+        return None
+
+    compact = value.lower().replace(" ", "").replace("-", "")
+
+    aliases = {
+        "boxhill": "Box Hill",
+        "boxhil": "Box Hill",
+        "boxhills": "Box Hill",
+
+        "mel": "Melbourne",
+        "melb": "Melbourne",
+        "cbd": "Melbourne",
+        "melbournecbd": "Melbourne",
+
+        "rich": "Richmond",
+        "carl": "Carlton",
+
+        "portmelbourne": "Port Melbourne",
+        "stkilda": "St Kilda",
+        "saintkilda": "St Kilda",
+        "chaddy": "Chadstone",
+        "dandy": "Dandenong",
+
+        "southbank": "Southbank",
+        "collingwood": "Collingwood",
+        "brunswick": "Brunswick",
+        "dandenong": "Dandenong",
+        "keysborough": "Keysborough",
+        "docklands": "Docklands",
+        "dockland": "Docklands",
+        "glenwaverley": "Glen Waverley",
+        "pointcook": "Point Cook",
+        "sunshinewest": "Sunshine West",
+        "airportwest": "Airport West",
+    }
+
+    if compact in aliases:
+        return aliases[compact]
+
+    return value
+
+
+def _extract_congestion_location(tracker: Tracker) -> Optional[str]:
+    """
+    Extract location for congestion prediction only.
+
+    Important:
+    Latest user message must be checked before old slots.
+    This prevents stale location bugs such as:
+    user says "congestion prediction to Keysborough"
+    but old slot "Box Hill" is reused.
+    """
+
+    text = tracker.latest_message.get("text", "") or ""
+    text = text.strip()
+
+    import re
+
+    # 1. Regex from latest message FIRST
+    # This catches: "congestion prediction to Keysborough"
+    patterns = [
+        r"\bcongestion\s+prediction\s+(?:to|for|at|near|in|around)\s+(.+)$",
+        r"\btraffic\s+congestion\s+(?:to|for|at|near|in|around)\s+(.+)$",
+        r"\bcongestion\s+(?:to|for|at|near|in|around)\s+(.+)$",
+        r"\bcheck\s+congestion\s+(?:to|for|at|near|in|around)\s+(.+)$",
+        r"\bpredict\s+congestion\s+(?:to|for|at|near|in|around)\s+(.+)$",
+        r"\bforecast\s+congestion\s+(?:to|for|at|near|in|around)\s+(.+)$",
+        r"\bhow\s+busy\s+is\s+(.+)$",
+        r"\bhow\s+crowded\s+is\s+(.+)$",
+        r"\bis\s+(.+?)\s+(?:busy|crowded|congested)\b",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            candidate = _normalise_congestion_location(match.group(1))
+            if candidate:
+                return candidate
+
+    # 2. Entity from latest message
+    entities = tracker.latest_message.get("entities", []) or []
+
+    for ent in entities:
+        if ent.get("entity") in [
+            "location",
+            "end_location",
+            "destination",
+            "suburb",
+            "station_name",
+        ]:
+            value = _normalise_congestion_location(ent.get("value"))
+            if value:
+                return value
+
+    # 3. Slot fallback LAST
+    # Only use old slot if user did not provide a new location.
+    for slot_name in ["location", "end_location"]:
+        value = _normalise_congestion_location(tracker.get_slot(slot_name))
+        if value:
+            return value
+
+    return None
+
+class ActionCongestionPrediction(Action):
+    def name(self) -> Text:
+        return "action_congestion_prediction"
+
+    def run(self, dispatcher, tracker, domain):
+
+        location = _extract_congestion_location(tracker)
+
+        if not location:
+            dispatcher.utter_message(
+                text=(
+                    "Which Melbourne suburb or charging location would you like "
+                    "a congestion prediction for?"
+                )
+            )
+            return []
+        
+        location_coords = None
+
+        try:
+            location_coords = data_service._get_location_coordinates(location)
+        except Exception as e:
+            print(f"Error validating congestion location: {e}")
+
+        if not location_coords:
+            dispatcher.utter_message(
+                text=(
+                    f"❌ I couldn't find **{location}** in the current Melbourne/Victoria dataset.\n\n"
+                    "Please try a supported suburb or charging location, such as "
+                    "Box Hill, Richmond, Carlton, Southbank, Port Melbourne, Brunswick, "
+                    "Dandenong, Geelong, Ballarat, or Bendigo."
+                )
+            )
+            return []
+
+        # ================================
+        # ⭐ Identify START LOCATION
+        # ================================
+        start_location = None
+
+        if tracker.get_slot("start_location"):
+            start_location = tracker.get_slot("start_location")
+
+        elif tracker.get_slot("current_location"):
+            start_location = tracker.get_slot("current_location")
+
+        elif tracker.get_slot("user_lat") and tracker.get_slot("user_lng"):
+            start_location = (
+                tracker.get_slot("user_lat"),
+                tracker.get_slot("user_lng")
+            )
+
+        # If no start location → show error message
+        if not start_location:
+            dispatcher.utter_message(
+                text="I need your starting location to find charging stations."
+            )
+            return []
+
+        # ================================
+        # ⭐ Get real CONGESTION
+        # ================================
+        congestion_value = None
+
+        if REAL_TIME_INTEGRATION_AVAILABLE and real_time_manager:
+            try:
+                traffic = real_time_manager.get_traffic_conditions(
+                    start_location,
+                    location
+                )
+
+                if traffic:
+                    congestion_value = traffic.get("congestion_level")
+
+            except Exception as e:
+                print(f"Error getting real-time congestion: {e}")
+
+        if isinstance(congestion_value, int):
+            level_labels = {
+                0: "Free-flow",
+                1: "Light congestion",
+                2: "Moderate congestion",
+                3: "Heavy congestion"
+            }
+
+            congestion_text = level_labels.get(congestion_value, "Unknown")
+
+            dispatcher.utter_message(
+                text=f"🚦 Current congestion level for **{location}** is **{congestion_text}**."
+            )
+        else:
+            dispatcher.utter_message(
+                text=f"⚠️ Real-time congestion data for **{location}** is unavailable right now."
+            )
+
+        # ================================
+        # ⭐ Recall ROUTE PLANNING
+        # ================================
+        try:
+            stations = data_service.get_route_stations(
+                start_location,
+                location
+            )
+
+            if stations:
+                _send_station_cards(dispatcher, stations, limit=10)
+
+                response = f"⚡ Found {len(stations)} charging stations from **{start_location}** to **{location}**:\n\n"
+                for i, station in enumerate(stations[:5]):
+                    response += f"**{i+1}. {station.get('name')}**\n"
+                    response += f"⚡ {station.get('power')} | 💰 {station.get('cost')}\n\n"
+
+                response += "Type a station name to choose one."
+
+                dispatcher.utter_message(text=response)
+
+                return [
+                    SlotSet("start_location", start_location),
+                    SlotSet("end_location", location),
+                    SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
+                ]
+
+            else:
+                dispatcher.utter_message(
+                    text=f"No charging stations found for route to {location}."
+                )
+                return []
+
+        except Exception:
+            dispatcher.utter_message(
+                text="⚠️ Error retrieving stations for this location."
+            )
+            return [
+                SlotSet("start_location", start_location),
+                SlotSet("end_location", location),
+                SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS),
+                SlotSet("previous_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
+            ]
+
+class ActionChargingInsights(Action):
+    def name(self) -> Text:
+        return "action_charging_insights"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any]
+    ) -> List[Dict[Text, Any]]:
+
+        selected_station = tracker.get_slot("selected_station")
+
+        try:
+            df = self._load_charging_dataset()
+
+            if df.empty:
+                dispatcher.utter_message(
+                    text=(
+                        "⚠️ I couldn't load charging insight data right now.\n\n"
+                        "General recommendation: charging is usually busier around "
+                        "late afternoon and early evening, and quieter after 9pm."
+                    )
+                )
+                return []
+
+            # Try station-specific insight first
+            if selected_station:
+                station_df = self._filter_station_records(df, selected_station)
+
+                if not station_df.empty:
+                    insight = self._build_insight_message(
+                        station_df,
+                        station_name=selected_station,
+                        is_station_specific=True
+                    )
+                    dispatcher.utter_message(text=insight)
+                    return []
+
+                # If station exists in slot but not in insight dataset
+                general_msg = self._build_insight_message(
+                    df,
+                    station_name=None,
+                    is_station_specific=False
+                )
+
+                dispatcher.utter_message(
+                    text=(
+                        f"⚠️ I couldn't find enough historical charging records for "
+                        f"**{selected_station}**.\n\n"
+                        f"Here is a general charging insight instead:\n\n"
+                        f"{general_msg}"
+                    )
+                )
+                return []
+
+            # No selected station: return general insight
+            insight = self._build_insight_message(
+                df,
+                station_name=None,
+                is_station_specific=False
+            )
+
+            dispatcher.utter_message(
+                text=(
+                    f"{insight}\n\n"
+                    "Tip: For station-specific insights, please choose a station first."
+                )
+            )
+
+            return []
+
+        except Exception as e:
+            print(f"Error in ActionChargingInsights: {e}")
+
+            dispatcher.utter_message(
+                text=(
+                    "⚠️ I couldn't calculate charging insights right now.\n\n"
+                    "General recommendation: avoid late afternoon and early evening "
+                    "if possible. Charging after 9pm is usually quieter."
+                )
+            )
+
+            return []
+
+    def _load_charging_dataset(self) -> pd.DataFrame:
+        """
+        Load ml_ev_charging_dataset.csv.
+
+        This dataset should include:
+        - Timestamp
+        - Station_Name
+
+        The path is resolved safely because the action server is usually run
+        from the rasa/ folder.
+        """
+
+        current_file = Path(__file__).resolve()
+
+        candidate_paths = [
+            Path("data/raw/ml_ev_charging_dataset.csv"),
+            Path("../data/raw/ml_ev_charging_dataset.csv"),
+            current_file.parents[1] / "data" / "raw" / "ml_ev_charging_dataset.csv",
+            current_file.parents[2] / "data" / "raw" / "ml_ev_charging_dataset.csv",
+        ]
+
+        dataset_path = None
+
+        for path in candidate_paths:
+            if path.exists():
+                dataset_path = path
+                break
+
+        if not dataset_path:
+            print("ml_ev_charging_dataset.csv not found.")
+            return pd.DataFrame()
+
+        df = pd.read_csv(dataset_path)
+
+        if "Timestamp" not in df.columns:
+            print("Timestamp column not found in charging insight dataset.")
+            return pd.DataFrame()
+
+        df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+        df = df.dropna(subset=["Timestamp"])
+
+        df["hour"] = df["Timestamp"].dt.hour
+
+        return df
+
+    def _normalise_text(self, text: str) -> str:
+        """
+        Normalise text for station name matching.
+        """
+        import re
+
+        if not text:
+            return ""
+
+        text = str(text).lower().strip()
+        text = text.replace("caufield", "caulfield")
+        text = re.sub(r"[^a-z0-9]+", " ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+
+        return text
+
+    def _similarity(self, a: str, b: str) -> float:
+        a_norm = self._normalise_text(a)
+        b_norm = self._normalise_text(b)
+
+        if not a_norm or not b_norm:
+            return 0.0
+
+        return SequenceMatcher(None, a_norm, b_norm).ratio()
+
+    def _filter_station_records(
+        self,
+        df: pd.DataFrame,
+        selected_station: str
+    ) -> pd.DataFrame:
+        """
+        Filter dataset records for selected station.
+
+        Matching strategy:
+        1. Exact normalised match
+        2. Partial match
+        3. Fuzzy match
+        """
+
+        if "Station_Name" not in df.columns or not selected_station:
+            return pd.DataFrame()
+
+        selected_norm = self._normalise_text(selected_station)
+
+        temp = df.copy()
+        temp["_station_norm"] = temp["Station_Name"].astype(str).apply(self._normalise_text)
+
+        # 1. Exact match
+        exact = temp[temp["_station_norm"] == selected_norm]
+
+        if not exact.empty:
+            return exact.drop(columns=["_station_norm"], errors="ignore")
+
+        # 2. Partial match
+        partial = temp[
+            temp["_station_norm"].apply(
+                lambda x: selected_norm in x or x in selected_norm
+            )
+        ]
+
+        if not partial.empty:
+            return partial.drop(columns=["_station_norm"], errors="ignore")
+
+        # 3. Fuzzy match
+        best_station = None
+        best_score = 0.0
+
+        for station_name in temp["Station_Name"].dropna().unique():
+            score = self._similarity(selected_station, station_name)
+
+            if score > best_score:
+                best_score = score
+                best_station = station_name
+
+        if best_station and best_score >= 0.65:
+            print(
+                f"Charging insight fuzzy match: '{selected_station}' "
+                f"-> '{best_station}' score={best_score}"
+            )
+
+            matched = temp[temp["Station_Name"] == best_station]
+            return matched.drop(columns=["_station_norm"], errors="ignore")
+
+        return pd.DataFrame()
+
+    def _format_hour(self, hour: int) -> str:
+        """
+        Convert 24-hour integer to readable label.
+        """
+        if hour == 0:
+            return "12am"
+        if hour < 12:
+            return f"{hour}am"
+        if hour == 12:
+            return "12pm"
+        return f"{hour - 12}pm"
+
+    def _format_hour_list(self, hours: List[int]) -> str:
+        """
+        Format list of hours.
+        """
+        if not hours:
+            return "not enough data"
+
+        return ", ".join([self._format_hour(int(h)) for h in hours])
+
+    def _classify_current_hour(self, hour: int, peak_hours: List[int], quiet_hours: List[int]) -> str:
+        """
+        Classify current hour using calculated insight first,
+        then simple fallback rules.
+        """
+
+        if hour in peak_hours:
+            return "This time is likely to be busy."
+
+        if hour in quiet_hours:
+            return "This time is likely to be quieter."
+
+        # Simple fallback rules from the task card
+        if 17 <= hour <= 19:
+            return "This time is usually considered a busy charging period."
+
+        if hour >= 21 or hour <= 5:
+            return "This time is usually considered a quieter charging period."
+
+        return "This time is likely to have normal charging demand."
+
+    def _build_insight_message(
+        self,
+        df: pd.DataFrame,
+        station_name: Optional[str],
+        is_station_specific: bool
+    ) -> str:
+        """
+        Build charging insight message from hourly frequency.
+
+        Since the dataset does not directly contain live occupancy,
+        the number of records per hour is used as a simple demand proxy.
+        """
+
+        if df.empty or "hour" not in df.columns:
+            return (
+                "⚡ Charging insight\n\n"
+                "There is not enough data to calculate detailed peak hours.\n\n"
+                "General recommendation: charging is usually busier around 5–7pm "
+                "and quieter after 9pm."
+            )
+
+        hourly_counts = df.groupby("hour").size().sort_values(ascending=False)
+
+        if hourly_counts.empty:
+            return (
+                "⚡ Charging insight\n\n"
+                "There is not enough timestamp data to calculate charging patterns.\n\n"
+                "General recommendation: charging after 9pm is usually quieter."
+            )
+
+        peak_hours = list(hourly_counts.head(3).index)
+
+        quiet_counts = hourly_counts.sort_values(ascending=True)
+        quiet_hours = list(quiet_counts.head(3).index)
+
+        peak_text = self._format_hour_list(peak_hours)
+        quiet_text = self._format_hour_list(quiet_hours)
+
+        current_hour = pd.Timestamp.now().hour
+        current_status = self._classify_current_hour(
+            current_hour,
+            peak_hours,
+            quiet_hours
+        )
+
+        if is_station_specific and station_name:
+            title = f"⚡ Charging insight for **{station_name}**"
+            scope_text = (
+                "This insight is based on historical records for the selected station."
+            )
+        else:
+            title = "⚡ General charging insight"
+            scope_text = (
+                "This insight is based on historical charging records across the dataset."
+            )
+
+        message = f"{title}\n\n"
+        message += f"{scope_text}\n\n"
+        message += f"📈 **Likely busier hours:** {peak_text}\n"
+        message += f"🌙 **Likely quieter hours:** {quiet_text}\n\n"
+        message += f"🕒 **Current time insight:** {current_status}\n\n"
+
+        message += (
+            "Recommendation: If your schedule is flexible, try using the station "
+            "during the quieter hours to reduce waiting time."
+        )
+
+        return message
