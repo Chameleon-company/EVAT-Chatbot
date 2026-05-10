@@ -107,6 +107,11 @@ nlu:
     - [Brunswick](current_location)
     - [Docklands](current_location)
     - [Footscray](current_location)
+    - [Richmond](current_location)
+    - [Carlton](current_location)
+    - [Geelong](current_location)
+    - [Box Hill](current_location)
+    - [Melbourne](current_location)
 
 - intent: emergency_connector_input
   examples: |
@@ -185,6 +190,16 @@ nlu:
     - i am located in [Docklands](current_location)
     - in [Melbourne](current_location)
     - in [Carlton](current_location)
+    - [Richmond](current_location)
+    - [Melbourne](current_location)
+    - [Carlton](current_location)
+    - [Geelong](current_location)
+    - [Frankston](current_location)
+    - [South Yarra](current_location)
+    - [St Kilda](current_location)
+    - [Docklands](current_location)
+    - [Box Hill](current_location)
+    - [Burwood](current_location)
 
 - intent: route_station_selection
   examples: |
@@ -643,6 +658,33 @@ nlu:
     - complete please
     - finish please
     - end please
+    
+    
+    
+- intent: current_location
+  examples: |
+    - Richmond
+    - Carlton
+    - Geelong
+    - Box Hill
+    - Melbourne
+    - St Kilda
+    - Brighton
+    - Dandenong
+    - Docklands
+    - Frankston
+    - South Yarra
+    - Burwood
+    - in Richmond
+    - in Carlton
+    - in Geelong
+    - in Box Hill
+    - in Melbourne
+    - my location is Richmond
+    - my location is Carlton
+    - I am in Richmond
+    - I am in Carlton
+    - I am in Geelong
 
 - lookup: charging_speed
   examples: |
@@ -776,3 +818,5 @@ nlu:
     - Point Cook Town Centre
     - Red Rooster Vermont
     - Greenvale Woolworths
+
+ 
