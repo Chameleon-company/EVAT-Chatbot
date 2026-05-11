@@ -24,6 +24,42 @@ rules:
   steps:
   - action: action_collect_initial_location
 
+# Route_info often misclassifies bare suburb names (e.g. "Carlton") — redirect during initial collection
+- rule: Handle route_info as location during initial collection
+  condition:
+  - slot_was_set:
+    - conversation_context: initial_location_collection
+  steps:
+  - intent: route_info
+  - action: action_collect_initial_location
+
+# Route_planning intent during initial collection → still collect location
+- rule: Handle route_planning as location during initial collection
+  condition:
+  - slot_was_set:
+    - conversation_context: initial_location_collection
+  steps:
+  - intent: route_planning
+  - action: action_collect_initial_location
+
+# current_location intent during initial collection
+- rule: Handle current_location intent during initial collection
+  condition:
+  - slot_was_set:
+    - conversation_context: initial_location_collection
+  steps:
+  - intent: current_location
+  - action: action_collect_initial_location
+
+# Fallback during initial collection → try to parse as suburb
+- rule: Handle fallback during initial location collection
+  condition:
+  - slot_was_set:
+    - conversation_context: initial_location_collection
+  steps:
+  - intent: nlu_fallback
+  - action: action_collect_initial_location
+
   # Show initial menu only on fallback when no conversation context
 - rule: Handle initial fallback to menu
   condition:
