@@ -161,7 +161,7 @@
           const location = await getUserLocation();
           userLocation = {
             lat: location.coords.latitude,
-            lon: location.coords.longitude
+            lng: location.coords.longitude
           };
           console.log("User location stored:", userLocation);
         } catch (error) {

@@ -901,6 +901,17 @@ nlu:
     - I am in Carlton
     - I am in Geelong
 
+- intent: restart
+  examples: |
+    - restart
+    - start over
+    - reset
+    - begin again
+    - restart chatbot
+    - start from the beginning
+    - reset conversation
+    - clear and restart
+
 - intent: ask_congestion_prediction
   examples: |
     - congestion prediction
