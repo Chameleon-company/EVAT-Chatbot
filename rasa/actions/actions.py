@@ -615,7 +615,7 @@ class ActionHandleRouteInput(Action):
                         dispatcher.utter_message(
                             text=f"Found {len(stations)} station{'s' if len(stations) != 1 else ''} along your route "
                                  f"from {start_display} to {end_location}. Tap a card or type a station name.")
-                        displayed = [{'name': s.get('name', f'Station {i+1}')} for i, s in enumerate(stations[:10])]
+                        displayed = stations[:10]
                         return [
                             SlotSet("start_location", start_location),
                             SlotSet("end_location", end_location),
@@ -660,7 +660,7 @@ class ActionHandleRouteInput(Action):
                 dispatcher.utter_message(
                     text=f"Found {len(stations)} station{'s' if len(stations) != 1 else ''} along your route "
                          f"from {start_display} to {end_location}. Tap a card or type a station name.")
-                displayed = [{'name': s.get('name', f'Station {i+1}')} for i, s in enumerate(stations[:10])]
+                displayed = stations[:10]
                 return [
                     SlotSet("start_location", start_location),
                     SlotSet("end_location", end_location),
@@ -1293,7 +1293,7 @@ class ActionGetDirectionsById(Action):
 
         # Get destination label
         if target_station:
-            destination = target_station.get("address") or target_station.get("name") or station_id or "Destination"
+            destination = target_station.get("name") or target_station.get("address") or station_id or "Destination"
             # Extract station lat/lng if not yet parsed
             if dest_lat is None:
                 try:
