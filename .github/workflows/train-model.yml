@@ -9,7 +9,7 @@ on:
       - 'Dockerfile.*'
 
 env:
-  PROJECT_ID: evat-chatbot-personal
+  PROJECT_ID: sit-26t1-rasa-chatbot-5c0c042
   REGION: australia-southeast1
   AR_REPO: evat-chatbot
   ACTIONS_SERVICE: evat-actions
