@@ -3,6 +3,7 @@ version: "3.1"
 intents:
   - greet
   - menu_selection
+  - current_location
   - route_planning
   - route_info
   - emergency_charging
@@ -18,15 +19,13 @@ intents:
   - follow_up
   - goodbye
   - nlu_fallback
-  # Enhanced preference filtering intent
   - filter_by_preferences
-  # Enhanced charger information intent
   - get_charger_info
-  # Traffic information intent
   - get_traffic_info
-  # Advanced directions intent
   - get_advanced_directions
   - get_directions
+  - station_availability
+  - nearby_stations
 
 entities:
   - menu_option
@@ -72,6 +71,12 @@ slots:
       - type: from_entity
         entity: current_location
 
+  station_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: station_name
 
   preference_type:
     type: text
@@ -85,7 +90,6 @@ slots:
     influence_conversation: true
     mappings:
       - type: custom
-
 
   action_type:
     type: text
@@ -185,7 +189,11 @@ responses:
   utter_goodbye:
     - text: "Goodbye! Have a great journey! 🚗⚡"
 
+  utter_station_availability:
+    - text: "I can help check station availability, but I need a station name or selected station first."
 
+  utter_nearby_stations:
+    - text: "I can help find nearby charging stations. Please share your location or allow location access."
 
 actions:
   - action_collect_initial_location
@@ -202,19 +210,15 @@ actions:
   - action_handle_emergency_location_input
   - action_handle_emergency_charging
   - action_handle_preference_charging
-  # Enhanced preference filtering action
   - action_enhanced_preference_filtering
-  # Enhanced charger information action
   - action_enhanced_charger_info
-  # Traffic information action
   - action_traffic_info
-  # Advanced directions action
   - action_advanced_directions
-  # Route info action
   - action_handle_route_info
   - action_get_directions_by_id
+  - action_nearby_stations
+  - action_check_station_availability
 
 session_config:
   session_expiration_time: 60
   carry_over_slots_to_new_session: true
-

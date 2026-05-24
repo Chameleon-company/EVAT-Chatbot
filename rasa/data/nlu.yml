@@ -39,7 +39,6 @@ nlu:
     - hey please
     - hey there please
     - start
- 
 
 - intent: menu_selection
   examples: |
@@ -47,14 +46,11 @@ nlu:
     - 2
     - 3
 
-
 - intent: goodbye
   examples: |
     - bye
     - pp
     - gud bye
-
-
 
 - intent: route_planning
   examples: |
@@ -111,6 +107,11 @@ nlu:
     - [Brunswick](current_location)
     - [Docklands](current_location)
     - [Footscray](current_location)
+    - [Richmond](current_location)
+    - [Carlton](current_location)
+    - [Geelong](current_location)
+    - [Box Hill](current_location)
+    - [Melbourne](current_location)
 
 - intent: emergency_connector_input
   examples: |
@@ -138,7 +139,6 @@ nlu:
     - I need a CCS charger
     - chademo connector
 
-
 - intent: preference_charging
   examples: |
     - cheapest charging
@@ -150,38 +150,30 @@ nlu:
     - luxury charging
     - budget charging
     - ultra fast charging
-    
     - cheapest option
     - fastest option
     - premium option
-    
     - show me [cheapest](preference_type) charging
     - find [fastest](preference_type) chargers
-    
     - [premium](preference_type) charging
     - preference charging
     - charging preferences
     - help with preferences
     - preference charging help
 
-
 - intent: preference_selection
   examples: |
     - [cheapest](preference_type)
     - [fastest](preference_type)
-    
     - [premium](preference_type)
     - i prefer [cheapest](preference_type)
     - show [fastest](preference_type)
-    
     - let's go with [premium](preference_type)
     - choose [cheapest](preference_type)
     - select [fastest](preference_type)
-    
     - pick [premium](preference_type)
     - go with [cheapest](preference_type)
     - go with [fastest](preference_type)
-    
     - go with [premium](preference_type)
 
 - intent: preference_location_input
@@ -198,6 +190,16 @@ nlu:
     - i am located in [Docklands](current_location)
     - in [Melbourne](current_location)
     - in [Carlton](current_location)
+    - [Richmond](current_location)
+    - [Melbourne](current_location)
+    - [Carlton](current_location)
+    - [Geelong](current_location)
+    - [Frankston](current_location)
+    - [South Yarra](current_location)
+    - [St Kilda](current_location)
+    - [Docklands](current_location)
+    - [Box Hill](current_location)
+    - [Burwood](current_location)
 
 - intent: route_station_selection
   examples: |
@@ -224,7 +226,7 @@ nlu:
     - Collingwood Library
     - Monash Caufield
     - ENGIE - Chadstone 2
-      - Malvern Central
+    - Malvern Central
     - Lynbrook Village
     - RMIT - City Campus
     - Camberwell Supercharger
@@ -308,7 +310,6 @@ nlu:
     - Tesla Supercharger Brighton East
     - Chargefox - Barnawartha North
 
-# Enhanced preference filtering intent
 - intent: filter_by_preferences
   examples: |
     - show me [fast](charging_speed) charging stations
@@ -341,7 +342,6 @@ nlu:
     - show me [CCS](connector_type) compatible stations
     - find [affordable](price) [Type 2](connector_type) chargers
 
-# Enhanced charger information intent
 - intent: get_charger_info
   examples: |
     - tell me about this charging station
@@ -365,7 +365,6 @@ nlu:
     - charging cost information
     - number of charging points
 
-# Traffic information intent
 - intent: get_traffic_info
   examples: |
     - how's the traffic
@@ -393,7 +392,6 @@ nlu:
     - traffic alerts
     - traffic warnings
 
-# Advanced directions intent
 - intent: get_advanced_directions
   examples: |
     - give me directions
@@ -418,6 +416,65 @@ nlu:
     - get directions
     - show directions
     - route guidance please
+
+- intent: station_availability
+  examples: |
+    - is this station available
+    - is this station available?
+    - is the station available
+    - is the charger available
+    - is this charger available
+    - is this charger free
+    - is this station free
+    - is the charging station free
+    - can i use this station
+    - can i use this charger
+    - is the station busy
+    - is this charger busy
+    - is this station occupied
+    - is there a free charger here
+    - are there any chargers available
+    - check station availability
+    - check charger availability
+    - availability
+    - check if this station is available
+    - is [Carlton](station_name) station available
+    - is [Richmond](station_name) station available
+    - is [Geelong](station_name) station available
+    - is [St Kilda](station_name) station available
+    - is [Box Hill](station_name) station available
+    - check availability for [Carlton](station_name)
+    - check availability for [Richmond](station_name)
+    - check availability for [Geelong](station_name)
+    - check station status for [Carlton](station_name)
+    - check station status for [Richmond](station_name)
+    - check station status for [Geelong](station_name)
+    - is [Carlton](station_name) available
+    - is [Richmond](station_name) available
+    - is [Geelong](station_name) available
+    - is [Carlton](station_name) free
+    - is [Richmond](station_name) free
+    - is [Geelong](station_name) free
+    - is [Carlton](station_name) busy
+    - is [Richmond](station_name) busy
+    - is [Geelong](station_name) busy
+
+- intent: nearby_stations
+  examples: |
+    - are there charging stations near me
+    - are there chargers near me
+    - find charging stations near me
+    - show nearby charging stations
+    - show nearby chargers
+    - where is the nearest charging station
+    - nearest charging station
+    - find stations near [Richmond](current_location)
+    - find stations near [Burwood](current_location)
+    - are there charging stations near [Burwood](current_location)
+    - charging stations near [Melbourne](current_location)
+    - chargers near [Carlton](current_location)
+    - nearby stations
+    - nearby chargers
 
 - intent: emergency_station_selection
   examples: |
@@ -621,7 +678,33 @@ nlu:
     - complete please
     - finish please
     - end please
-
+    
+    
+    
+- intent: current_location
+  examples: |
+    - Richmond
+    - Carlton
+    - Geelong
+    - Box Hill
+    - Melbourne
+    - St Kilda
+    - Brighton
+    - Dandenong
+    - Docklands
+    - Frankston
+    - South Yarra
+    - Burwood
+    - in Richmond
+    - in Carlton
+    - in Geelong
+    - in Box Hill
+    - in Melbourne
+    - my location is Richmond
+    - my location is Carlton
+    - I am in Richmond
+    - I am in Carlton
+    - I am in Geelong
 
 - lookup: charging_speed
   examples: |
@@ -755,3 +838,5 @@ nlu:
     - Point Cook Town Centre
     - Red Rooster Vermont
     - Greenvale Woolworths
+
+ 

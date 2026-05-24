@@ -115,3 +115,23 @@ stories:
   steps:
   - intent: get_advanced_directions
   - action: action_advanced_directions
+
+# Station availability flow
+- story: station_availability_flow
+  steps:
+  - intent: station_availability
+  - action: action_check_station_availability
+
+- story: station_availability_after_station_name
+  steps:
+  - intent: station_availability
+  - action: action_check_station_availability
+  - intent: route_station_selection
+  - action: action_check_station_availability
+
+- story: station_availability_after_location_name
+  steps:
+  - intent: station_availability
+  - action: action_check_station_availability
+  - intent: current_location
+  - action: action_check_station_availability

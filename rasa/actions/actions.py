@@ -139,11 +139,9 @@ class ActionCollectInitialLocation(Action):
         return "action_collect_initial_location"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        # Check if this is the first time (greeting)
         conversation_context = tracker.get_slot("conversation_context")
 
         if not conversation_context:
-            # First time - show greeting and ask for location
             dispatcher.utter_message(
                 text="Hello! Welcome to Melbourne EV Charging Assistant! ⚡\n\n"
                      "📍 **Getting your location...**\n\n"
@@ -162,65 +160,94 @@ class ActionCollectInitialLocation(Action):
                      "1. 🗺️ **Route Planning** - Plan charging stops for your journey\n"
                      "2. 🚨 **Emergency Charging** - Find nearest stations when battery is low\n"
                      "3. ⚡ **Charging Preferences** - Find stations by your preferences\n\n"
-                     "**🎯 Type 1, 2, or 3 to continue!**")
+                     "**🎯 Type 1, 2, or 3 to continue!**"
+            )
 
-            # Store the coordinates for future use
             return [
                 SlotSet("user_lat", user_lat),
                 SlotSet("user_lng", user_lng),
-                SlotSet("conversation_context", None)  # Reset to show menu
+                SlotSet("conversation_context", None)
             ]
-        else:
-            # Check if user typed a suburb name
-            message = tracker.latest_message.get('text', '').strip()
 
-            if message and len(message) > 0:
-                # Try to get coordinates from suburb name
-                try:
-                    coords = data_service._get_location_coordinates(message)
-                    if coords:
-                        lat, lng = coords
-                        dispatcher.utter_message(
-                            text=f"✅ **Location set to {message}!** Now I can help you find the best charging options.\n\n"
-                                 "Please select an option:\n\n"
-                                 "1. 🗺️ **Route Planning** - Plan charging stops for your journey\n"
-                                 "2. 🚨 **Emergency Charging** - Find nearest stations when battery is low\n"
-                                 "3. ⚡ **Charging Preferences** - Find stations by your preferences\n\n"
-                            "**🎯 Type 1, 2, or 3 to continue!**")
+        message = (tracker.latest_message.get('text') or '').strip()
+        lower_message = message.lower()
 
-                        return [
-                            SlotSet("user_lat", lat),
-                            SlotSet("user_lng", lng),
-                            SlotSet("current_location", message),
-                            # Reset to show menu
-                            SlotSet("conversation_context", None)
-                        ]
-                    else:
-                        dispatcher.utter_message(
-                            text=f"❌ **Location not found**\n\n"
-                                 f"I couldn't find '{message}' in Melbourne.\n\n"
-                                 "**Please try:**\n"
-                                 "• A different suburb name (e.g., 'Richmond', 'Carlton')\n"
-                                 "• Share your GPS location 📱\n\n"
-                                 "💡 **Tip:** Make sure the suburb is in Melbourne!")
-                        return []
-                except Exception as e:
-                    dispatcher.utter_message(
-                        text="❌ **Error processing location**\n\n"
-                             "Please try:\n"
-                             "• A different suburb name\n"
-                             "• Share your GPS location 📱")
-                    return []
-            else:
-                # No message, ask again
+        blocked_inputs = {
+            "hi", "hello", "hey", "hey there",
+            "1", "2", "3",
+            "cheapest", "fastest", "premium",
+            "thanks", "thank you", "thx",
+            "bye", "goodbye"
+        }
+
+        if not message:
+            dispatcher.utter_message(
+                text="📍 **Location Required**\n\n"
+                     "I need your current location to help you.\n\n"
+                     "💡 **Tip:** Sharing your location gives you the most accurate results!"
+            )
+            return []
+
+        if lower_message in blocked_inputs:
+            dispatcher.utter_message(
+                text="📍 **Please share your location first**\n\n"
+                     "Type a Melbourne suburb like:\n"
+                     "• Richmond\n"
+                     "• Carlton\n"
+                     "• Geelong\n"
+                     "• Box Hill\n\n"
+                     "Or allow location access 📱"
+            )
+            return []
+
+        if len(message) < 4:
+            dispatcher.utter_message(
+                text="📍 **Location not clear**\n\n"
+                     "Please type a full Melbourne suburb name like:\n"
+                     "• Richmond\n"
+                     "• Carlton\n"
+                     "• Geelong\n"
+                     "• Box Hill"
+            )
+            return []
+
+        try:
+            coords = data_service._get_location_coordinates(message)
+            if coords:
+                lat, lng = coords
                 dispatcher.utter_message(
-                    text="📍 **Location Required**\n\n"
-                         "I need your current location to help you.\n\n"
-                    #  "**Please either:**\n"
-                    #  "• Share your GPS location 📱\n"
-                    #  "• Type your suburb name (e.g., 'Richmond')\n\n"
-                         "💡 **Tip:** Sharing your location gives you the most accurate results!")
+                    text=f"✅ **Location set to {message}!** Now I can help you find the best charging options.\n\n"
+                         "Please select an option:\n\n"
+                         "1. 🗺️ **Route Planning** - Plan charging stops for your journey\n"
+                         "2. 🚨 **Emergency Charging** - Find nearest stations when battery is low\n"
+                         "3. ⚡ **Charging Preferences** - Find stations by your preferences\n\n"
+                         "**🎯 Type 1, 2, or 3 to continue!**"
+                )
+
+                return [
+                    SlotSet("user_lat", lat),
+                    SlotSet("user_lng", lng),
+                    SlotSet("current_location", message),
+                    SlotSet("conversation_context", None)
+                ]
+            else:
+                dispatcher.utter_message(
+                    text=f"❌ **Location not found**\n\n"
+                         f"I couldn't find '{message}' in Melbourne.\n\n"
+                         "**Please try:**\n"
+                         "• A different suburb name (e.g., 'Richmond', 'Carlton')\n"
+                         "• Share your GPS location 📱\n\n"
+                         "💡 **Tip:** Make sure the suburb is in Melbourne!"
+                )
                 return []
+        except Exception:
+            dispatcher.utter_message(
+                text="❌ **Error processing location**\n\n"
+                     "Please try:\n"
+                     "• A different suburb name\n"
+                     "• Share your GPS location 📱"
+            )
+            return []
 
 
 class ActionHandleAnyInput(Action):
@@ -489,87 +516,65 @@ class ActionHandleRouteInput(Action):
         message = tracker.latest_message.get('text', '').lower().strip()
         conversation_context = tracker.get_slot("conversation_context")
 
-        # Only process if we're in route planning context
         if conversation_context != ConversationContexts.ROUTE_PLANNING:
             return []
 
-        # Check for stored user location from initial collection
         stored_lat = tracker.get_slot("user_lat")
         stored_lng = tracker.get_slot("user_lng")
-        stored_location = tracker.get_slot("current_location")
 
         if stored_lat and stored_lng:
             raw_text = tracker.latest_message.get('text', '') or ''
             raw_text = raw_text.strip()
             if raw_text:
                 import re
-                # Strip an optional leading 'to'
-                dest_text = re.sub(r'^\s*to\b', '', raw_text,
-                                   flags=re.IGNORECASE).strip()
+                dest_text = re.sub(r'^\s*to\b', '', raw_text, flags=re.IGNORECASE).strip()
                 if dest_text:
                     start_location = (stored_lat, stored_lng)
                     end_location = dest_text
                     return self._process_route(dispatcher, start_location, end_location)
 
-        # Check for traditional "from [start] to [destination]" format
         if 'from' in message and 'to' in message:
-
-            # Extract start and end locations from the message
             start_location = None
             end_location = None
 
             try:
-                # Split by 'from' and take everything after it
                 after_from = message.split('from', 1)[1]
 
-                # Use regex to find the word "to" (not just any "to")
                 import re
-                # Look for "to" as a word boundary, not inside other words
                 to_match = re.search(r'\bto\b', after_from, re.IGNORECASE)
 
                 if to_match:
                     to_index = to_match.start()
                     start_location = after_from[:to_index].strip()
-                    # +2 for "to"
                     end_location = after_from[to_index + 2:].strip()
 
-                    # Validate that we actually got meaningful text
-                    if start_location and end_location and len(start_location) > 0 and len(end_location) > 0:
-                        pass
-                    else:
-
+                    if not (start_location and end_location):
                         start_location = None
                         end_location = None
-                else:
 
-                    start_location = None
-                    end_location = None
-            except Exception as e:
-
+            except Exception:
                 start_location = None
                 end_location = None
 
             if not start_location or not end_location:
                 if not start_location and not end_location:
                     dispatcher.utter_message(
-                        text="🗺️ **Route Planning**\n\nProvide your route: 'from [start] to [destination]'")
+                        text="🗺️ **Route Planning**\n\nProvide your route: 'from [start] to [destination]'"
+                    )
                 elif not start_location:
                     dispatcher.utter_message(
-                        text=f"🗺️ **Route Planning**\n\n✅ End location: {end_location}\n❌ Missing start location\n\nProvide: 'from [start] to {end_location}'")
-                else:  # not end_location
+                        text=f"🗺️ **Route Planning**\n\n✅ End location: {end_location}\n❌ Missing start location\n\nProvide: 'from [start] to {end_location}'"
+                    )
+                else:
                     dispatcher.utter_message(
-                        text=f"🗺️ **Route Planning**\n\n✅ Start location: {start_location}\n❌ Missing end location\n\nProvide: 'from {start_location} to [destination]'")
+                        text=f"🗺️ **Route Planning**\n\n✅ Start location: {start_location}\n❌ Missing end location\n\nProvide: 'from {start_location} to [destination]'"
+                    )
 
-                # Stay in route planning mode
                 return [SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING)]
 
-            # If we have both locations, process the route
             if start_location and end_location:
-                # Set the slots and find charging stations
                 try:
-                    # Try to get charging stations from the data service
-                    stations = data_service.get_route_stations(
-                        start_location, end_location)
+                    stations = data_service.get_route_stations(start_location, end_location)
 
                     if stations:
                         _send_station_cards(dispatcher, stations, limit=10)
@@ -593,98 +598,29 @@ class ActionHandleRouteInput(Action):
 
                         dispatcher.utter_message(text=response)
 
-                        # Set the conversation context to ROUTE_PLANNING_RESULTS so station selection works
                         return [
                             SlotSet("start_location", start_location),
                             SlotSet("end_location", end_location),
-                            SlotSet("conversation_context",
-                                    ConversationContexts.ROUTE_PLANNING_RESULTS)
+                            SlotSet("displayed_stations", displayed),
+                            SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
                         ]
                     else:
-                        # Check if locations were resolved
-                        start_coords = data_service._get_location_coordinates(
-                            start_location)
-                        end_coords = data_service._get_location_coordinates(
-                            end_location)
+                        dispatcher.utter_message(
+                            text=f"❌ **No charging stations found** along route: {start_location} → {end_location}\n\n"
+                                 "💡 **Try:**\n"
+                                 "• A different destination\n"
+                                 "• Check if both locations are in Melbourne area"
+                        )
+                        return [SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING)]
 
-                        if not start_coords:
-                            dispatcher.utter_message(
-                                text=f"❌ **Location Error:** '{start_location}' not found in coordinates dataset\n\n"
-                                     f"🔍 **Debug Info:**\n"
-                                     f"• Start location: '{start_location}' → No coordinates found\n"
-                                     f"• End location: '{end_location}' → {'Found' if end_coords else 'Not found'}\n"
-                                     f"• Check if '{start_location}' exists in Co-ordinates.csv\n\n"
-                                     f"💡 **Try again with a different location:**\n"
-                                     f"Example: 'from Box Hill to Melbourne' or 'from Richmond to Melbourne'")
-
-                            # Stay in route planning mode, don't set results context
-                            return [
-                                SlotSet("start_location", None),
-                                SlotSet("end_location", None),
-                                SlotSet("conversation_context",
-                                        ConversationContexts.ROUTE_PLANNING)
-                            ]
-
-                        elif not end_coords:
-                            dispatcher.utter_message(
-                                text=f"❌ **Location Error:** '{end_location}' not found in coordinates dataset\n\n"
-                                     f"🔍 **Debug Info:**\n"
-                                     f"• Start location: '{start_location}' → Found\n"
-                                     f"• End location: '{end_location}' → No coordinates found\n"
-                                     f"• Check if '{end_location}' exists in Co-ordinates.csv\n\n"
-                                     f"💡 **Try again with a different route:**\n"
-                                     f"Example: 'from {start_location} to Melbourne' or 'from {start_location} to Carlton'")
-
-                            # Stay in route planning mode, don't set results context
-                            return [
-                                SlotSet("start_location", start_location),
-                                SlotSet("end_location", None),
-                                SlotSet("conversation_context",
-                                        ConversationContexts.ROUTE_PLANNING)
-                            ]
-
-                        else:
-                            dispatcher.utter_message(
-                                text=f"🎯 **Route Confirmed:** {start_location} → {end_location}\n\n"
-                                     f"📍 **Distance:** {data_service._calculate_distance(start_coords, end_coords):.1f} km\n"
-                                     f"❌ **No charging stations found** along this route\n\n"
-                                     f"🔍 **Debug Info:**\n"
-                                     f"• Both locations resolved successfully\n"
-                                     f"• Route distance: {data_service._calculate_distance(start_coords, end_coords):.1f} km\n"
-                                     f"• Search radius: {min(data_service._calculate_distance(start_coords, end_coords) * 0.3, 20.0):.1f} km\n"
-                                     f"• Check charger_info_mel.csv for stations in this area")
-
-                            # Set results context only when both locations are valid
-                            return [
-                                SlotSet("start_location", start_location),
-                                SlotSet("end_location", end_location),
-                                SlotSet("conversation_context",
-                                        ConversationContexts.ROUTE_PLANNING_RESULTS)
-                            ]
                 except Exception as e:
                     print(f"Error finding route stations: {e}")
-                    # Check if locations were resolved
-                    start_coords = data_service._get_location_coordinates(
-                        start_location)
-                    end_coords = data_service._get_location_coordinates(
-                        end_location)
-
                     dispatcher.utter_message(
-                        text=f"❌ **System Error:** Exception occurred while processing route\n\n"
-                             f"🔍 **Debug Info:**\n"
-                             f"• Exception: {str(e)}\n"
-                             f"• Start location: '{start_location}' → {'Found' if start_coords else 'Not found'}\n"
-                             f"• End location: '{end_location}' → {'Found' if end_coords else 'Not found'}\n"
-                             f"• Check console logs for full error details\n\n"
-                             f"💡 **Try again with a different route:**\n"
-                             f"Example: 'from Box Hill to Melbourne' or 'from Richmond to Carlton'")
+                        text=f"❌ **Error processing route**\n\n"
+                             f"Please try again or use the format: 'from [start] to [destination]'"
+                    )
+                    return [SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING)]
 
-                    return [
-                        SlotSet("start_location", None),
-                        SlotSet("end_location", None),
-                        SlotSet("conversation_context",
-                                ConversationContexts.ROUTE_PLANNING)
-                    ]
         else:
             dispatcher.utter_message(
                 text="🗺️ **Route Planning**\n\n"
@@ -692,16 +628,12 @@ class ActionHandleRouteInput(Action):
                      f"• Melbourne, Box Hill, Richmond, Carlton\n"
                      f"• St Kilda, Brighton, Geelong, Dandenong\n"
                      f"• And 190+ other suburbs\n\n"
-
             )
             return []
 
     def _process_route(self, dispatcher: CollectingDispatcher, start_location: str, end_location: str) -> List[Dict[Text, Any]]:
-        """Helper method to process route with given start and end locations"""
         try:
-            # Try to get charging stations from the data service
-            stations = data_service.get_route_stations(
-                start_location, end_location)
+            stations = data_service.get_route_stations(start_location, end_location)
 
             if stations:
                 _send_station_cards(dispatcher, stations, limit=10)
@@ -725,27 +657,27 @@ class ActionHandleRouteInput(Action):
 
                 dispatcher.utter_message(text=response)
 
-                # Set the conversation context to ROUTE_PLANNING_RESULTS so station selection works
                 return [
                     SlotSet("start_location", start_location),
                     SlotSet("end_location", end_location),
-                    SlotSet("conversation_context",
-                            ConversationContexts.ROUTE_PLANNING_RESULTS)
+                    SlotSet("displayed_stations", displayed),
+                    SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING_RESULTS)
                 ]
             else:
                 dispatcher.utter_message(
                     text=f"❌ **No charging stations found** along route: {start_location} → {end_location}\n\n"
                          "💡 **Try:**\n"
                          "• A different destination\n"
-                         "• Check if both locations are in Melbourne area")
+                         "• Check if both locations are in Melbourne area"
+                )
                 return [SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING)]
 
         except Exception as e:
             dispatcher.utter_message(
                 text=f"❌ **Error processing route**\n\n"
-                     f"Please try again or use the format: 'from [start] to [destination]'")
+                     f"Please try again or use the format: 'from [start] to [destination]'"
+            )
             return [SlotSet("conversation_context", ConversationContexts.ROUTE_PLANNING)]
-
 
 """
 Removed unused ActionHandleEmergencyInput.
@@ -2002,7 +1934,145 @@ class ActionHandleActionChoice(Action):
         dispatcher.utter_message(text=msg)
         return []
 
+class ActionCheckStationAvailability(Action):
+    def name(self) -> Text:
+        return "action_check_station_availability"
 
+    def _find_station_from_displayed(self, tracker: Tracker, query: str) -> Optional[Dict[str, Any]]:
+        displayed_stations = tracker.get_slot("displayed_stations") or []
+        query_lower = (query or "").strip().lower()
+
+        for st in displayed_stations:
+            name = str(st.get("name", "")).strip().lower()
+            if query_lower == name or query_lower in name or name in query_lower:
+                return st
+        return None
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        selected_station = tracker.get_slot("selected_station")
+        station_name_slot = tracker.get_slot("station_name")
+        current_location = tracker.get_slot("current_location")
+
+        latest_station_entity = next(tracker.get_latest_entity_values("station_name"), None)
+        latest_location_entity = next(tracker.get_latest_entity_values("current_location"), None)
+
+        station_query = latest_station_entity or selected_station or station_name_slot or latest_location_entity or current_location
+
+        if not station_query:
+            dispatcher.utter_message(
+                text="I can help check station availability, but I need a station name or selected station first."
+            )
+            return [SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY)]
+
+        station = self._find_station_from_displayed(tracker, station_query)
+
+        if not station:
+            dispatcher.utter_message(
+                text=f"I couldn't find a station matching '{station_query}'. Try a more exact station name."
+            )
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("station_name", station_query)
+            ]
+
+        lat = station.get("latitude")
+        lng = station.get("longitude")
+
+        if lat is None or lng is None:
+            dispatcher.utter_message(
+                text=f"I found '{station.get('name', station_query)}', but I couldn't get its location details."
+            )
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station.get("name")),
+                SlotSet("station_name", station.get("name"))
+            ]
+
+        try:
+            status, updated_at, data = data_service._get_station_availability(float(lat), float(lng))
+        except Exception:
+            dispatcher.utter_message(
+                text=f"I found '{station.get('name', station_query)}', but I couldn't check its availability right now."
+            )
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station.get("name")),
+                SlotSet("station_name", station.get("name"))
+            ]
+
+        station_name = station.get("name", station_query)
+        msg = f"🔌 **{station_name} Availability:**\n"
+
+        if not isinstance(data, dict):
+            msg += str(status)
+            dispatcher.utter_message(text=msg)
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station_name),
+                SlotSet("station_name", station_name)
+            ]
+
+        connectors = data.get("connectors", [])
+        if not connectors:
+            raw = data.get("raw")
+            if raw:
+                msg += str(raw)
+            else:
+                msg += str(status)
+            dispatcher.utter_message(text=msg)
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station_name),
+                SlotSet("station_name", station_name)
+            ]
+
+        connector_filters = list(tracker.get_latest_entity_values("connector_type"))
+
+        filtered_connectors = connectors
+        if connector_filters:
+            lowered_filters = [str(f).lower() for f in connector_filters]
+            filtered_connectors = []
+            for conn in connectors:
+                conn_type = str(conn.get("type", "")).lower()
+                if any(f in conn_type for f in lowered_filters):
+                    filtered_connectors.append(conn)
+
+        if connector_filters and not filtered_connectors:
+            msg += f"No matching connector type found for this station."
+            dispatcher.utter_message(text=msg)
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station_name),
+                SlotSet("station_name", station_name)
+            ]
+
+        for conn in filtered_connectors:
+            conn_type = conn.get("type", "Unknown")
+            total = conn.get("total", 0)
+            current = conn.get("availability", {}).get("current", {})
+            available = current.get("available", 0)
+            occupied = current.get("occupied", 0)
+            reserved = current.get("reserved", 0)
+            unknown = current.get("unknown", 0)
+            out_of_service = current.get("outOfService", 0)
+
+            msg += (
+                f"\n• **{conn_type}** (Total: {total})\n"
+                f"   - Available: {available}\n"
+                f"   - Occupied: {occupied}\n"
+                f"   - Reserved: {reserved}\n"
+                f"   - Unknown: {unknown}\n"
+                f"   - Out of Service: {out_of_service}\n"
+            )
+
+        dispatcher.utter_message(text=msg)
+
+        return [
+            SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+            SlotSet("selected_station", station_name),
+            SlotSet("station_name", station_name)
+        ]
+    
 class ActionHandleFollowUp(Action):
     def name(self) -> Text:
         return "action_handle_follow_up"
@@ -2229,7 +2299,6 @@ class ActionTrafficInfo(Action):
         dispatcher.utter_message(text=Messages.GOODBYE)
         return [SlotSet("conversation_context", ConversationContexts.ENDED)]
 
-
 class ActionEnhancedChargerInfo(Action):
     def name(self) -> Text:
         return "action_enhanced_charger_info"
@@ -2265,34 +2334,46 @@ class ActionEnhancedChargerInfo(Action):
         except Exception as e:
             print(f"Error in ActionEnhancedChargerInfo: {e}")
             dispatcher.utter_message(
-                text="❌ Unable to fetch charger details right now.")
+                text="❌ Unable to fetch charger details right now."
+            )
             return []
-
-
+        
 class ActionEnhancedPreferenceFiltering(Action):
     def name(self) -> Text:
         return "action_enhanced_preference_filtering"
 
-    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        # Misclassification guards: if user is in route or emergency flows and typed something like "show me <station>", forward to the appropriate handler
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any]
+    ) -> List[Dict[Text, Any]]:
         conversation_context = tracker.get_slot("conversation_context")
-        if conversation_context in [ConversationContexts.ROUTE_PLANNING_RESULTS, ConversationContexts.STATION_DETAILS]:
+
+        if conversation_context in [
+            ConversationContexts.ROUTE_PLANNING_RESULTS,
+            ConversationContexts.STATION_DETAILS,
+        ]:
             try:
                 return ActionHandleRouteStationSelection().run(dispatcher, tracker, domain)
             except Exception as e:
-                print(
-                    f"Error forwarding to route station selection from preference filter action: {e}")
-                # Fall through to neutral no-op in case of error
+                print(f"Error forwarding to route station selection from preference filter action: {e}")
                 return []
-        if conversation_context in [ConversationContexts.EMERGENCY_RESULTS, ConversationContexts.EMERGENCY_CHARGING]:
+
+        if conversation_context in [
+            ConversationContexts.EMERGENCY_RESULTS,
+            ConversationContexts.EMERGENCY_CHARGING,
+        ]:
             try:
                 return ActionHandleEmergencyStationSelection().run(dispatcher, tracker, domain)
             except Exception as e:
-                print(
-                    f"Error forwarding to emergency station selection from preference filter action: {e}")
+                print(f"Error forwarding to emergency station selection from preference filter action: {e}")
                 return []
 
-        if conversation_context in [ConversationContexts.PREFERENCE_CHARGING, ConversationContexts.PREFERENCE_RESULTS]:
+        if conversation_context in [
+            ConversationContexts.PREFERENCE_CHARGING,
+            ConversationContexts.PREFERENCE_RESULTS,
+        ]:
             dispatcher.utter_message(
                 text=(
                     "❌ Preference-based filtering is unavailable right now. "
@@ -2300,4 +2381,66 @@ class ActionEnhancedPreferenceFiltering(Action):
                 )
             )
             return [SlotSet("conversation_context", ConversationContexts.ENDED)]
+
+        return []
+
+
+class ActionNearbyStations(Action):
+    def name(self) -> Text:
+        return "action_nearby_stations"
+
+    def run(
+        self,
+        dispatcher: CollectingDispatcher,
+        tracker: Tracker,
+        domain: Dict[Text, Any]
+    ) -> List[Dict[Text, Any]]:
+        location = tracker.get_slot("current_location")
+
+        entities = tracker.latest_message.get("entities", []) or []
+        for ent in entities:
+            if ent.get("entity") == "current_location" and ent.get("value"):
+                location = ent.get("value")
+                break
+
+        user_lat = tracker.get_slot("user_lat")
+        user_lng = tracker.get_slot("user_lng")
+
+        stations: List[Dict[str, Any]] = []
+
+        try:
+            if location:
+                coords = data_service._get_location_coordinates(location)
+                if coords:
+                    stations = data_service.get_emergency_stations_from_coordinates(coords)
+            elif user_lat is not None and user_lng is not None:
+                stations = data_service.get_emergency_stations_from_coordinates((user_lat, user_lng))
+        except Exception as e:
+            dispatcher.utter_message(text=f"Error finding nearby stations: {str(e)}")
+            return []
+
+        if stations:
+            _send_station_cards(dispatcher, stations, limit=5)
+
+            response = "Here are some nearby charging stations:\n\n"
+            for i, station in enumerate(stations[:5], 1):
+                name = station.get("name", f"Station {i}")
+                dist = station.get("distance_km")
+
+                if isinstance(dist, (int, float)):
+                    response += f"{i}. {name} - {dist:.1f} km away\n"
+                else:
+                    response += f"{i}. {name}\n"
+
+            response += "\nType the station name if you want more details."
+            dispatcher.utter_message(text=response)
+
+            return [
+                SlotSet("displayed_stations", stations[:5]),
+                SlotSet("conversation_context", ConversationContexts.STATION_DETAILS),
+            ]
+
+        dispatcher.utter_message(
+            text="I couldn't find nearby charging stations for that location. Try another suburb like Richmond or Carlton."
+        )
         return []

@@ -14,6 +14,7 @@ rules:
   - slot_was_set:
     - conversation_context: initial_location_collection
   steps:
+  - intent: current_location
   - action: action_collect_initial_location
 
 # Show initial menu only on fallback when no conversation context
@@ -242,6 +243,18 @@ rules:
   - intent: get_directions
   - action: action_get_directions_by_id
 
+# New station availability rule
+- rule: Handle station availability
+  steps:
+  - intent: station_availability
+  - action: action_check_station_availability
+
+# New nearby stations rule
+- rule: Handle nearby stations
+  steps:
+  - intent: nearby_stations
+  - action: action_nearby_stations
+
 # Ended conversation: ignore further input
 - rule: Ignore input when ended
   condition:
@@ -273,4 +286,3 @@ rules:
   steps:
   - intent: nlu_fallback
   - action: action_handle_emergency_location_input
-
