@@ -1934,7 +1934,145 @@ class ActionHandleActionChoice(Action):
         dispatcher.utter_message(text=msg)
         return []
 
+class ActionCheckStationAvailability(Action):
+    def name(self) -> Text:
+        return "action_check_station_availability"
 
+    def _find_station_from_displayed(self, tracker: Tracker, query: str) -> Optional[Dict[str, Any]]:
+        displayed_stations = tracker.get_slot("displayed_stations") or []
+        query_lower = (query or "").strip().lower()
+
+        for st in displayed_stations:
+            name = str(st.get("name", "")).strip().lower()
+            if query_lower == name or query_lower in name or name in query_lower:
+                return st
+        return None
+
+    def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        selected_station = tracker.get_slot("selected_station")
+        station_name_slot = tracker.get_slot("station_name")
+        current_location = tracker.get_slot("current_location")
+
+        latest_station_entity = next(tracker.get_latest_entity_values("station_name"), None)
+        latest_location_entity = next(tracker.get_latest_entity_values("current_location"), None)
+
+        station_query = latest_station_entity or selected_station or station_name_slot or latest_location_entity or current_location
+
+        if not station_query:
+            dispatcher.utter_message(
+                text="I can help check station availability, but I need a station name or selected station first."
+            )
+            return [SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY)]
+
+        station = self._find_station_from_displayed(tracker, station_query)
+
+        if not station:
+            dispatcher.utter_message(
+                text=f"I couldn't find a station matching '{station_query}'. Try a more exact station name."
+            )
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("station_name", station_query)
+            ]
+
+        lat = station.get("latitude")
+        lng = station.get("longitude")
+
+        if lat is None or lng is None:
+            dispatcher.utter_message(
+                text=f"I found '{station.get('name', station_query)}', but I couldn't get its location details."
+            )
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station.get("name")),
+                SlotSet("station_name", station.get("name"))
+            ]
+
+        try:
+            status, updated_at, data = data_service._get_station_availability(float(lat), float(lng))
+        except Exception:
+            dispatcher.utter_message(
+                text=f"I found '{station.get('name', station_query)}', but I couldn't check its availability right now."
+            )
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station.get("name")),
+                SlotSet("station_name", station.get("name"))
+            ]
+
+        station_name = station.get("name", station_query)
+        msg = f"🔌 **{station_name} Availability:**\n"
+
+        if not isinstance(data, dict):
+            msg += str(status)
+            dispatcher.utter_message(text=msg)
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station_name),
+                SlotSet("station_name", station_name)
+            ]
+
+        connectors = data.get("connectors", [])
+        if not connectors:
+            raw = data.get("raw")
+            if raw:
+                msg += str(raw)
+            else:
+                msg += str(status)
+            dispatcher.utter_message(text=msg)
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station_name),
+                SlotSet("station_name", station_name)
+            ]
+
+        connector_filters = list(tracker.get_latest_entity_values("connector_type"))
+
+        filtered_connectors = connectors
+        if connector_filters:
+            lowered_filters = [str(f).lower() for f in connector_filters]
+            filtered_connectors = []
+            for conn in connectors:
+                conn_type = str(conn.get("type", "")).lower()
+                if any(f in conn_type for f in lowered_filters):
+                    filtered_connectors.append(conn)
+
+        if connector_filters and not filtered_connectors:
+            msg += f"No matching connector type found for this station."
+            dispatcher.utter_message(text=msg)
+            return [
+                SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+                SlotSet("selected_station", station_name),
+                SlotSet("station_name", station_name)
+            ]
+
+        for conn in filtered_connectors:
+            conn_type = conn.get("type", "Unknown")
+            total = conn.get("total", 0)
+            current = conn.get("availability", {}).get("current", {})
+            available = current.get("available", 0)
+            occupied = current.get("occupied", 0)
+            reserved = current.get("reserved", 0)
+            unknown = current.get("unknown", 0)
+            out_of_service = current.get("outOfService", 0)
+
+            msg += (
+                f"\n• **{conn_type}** (Total: {total})\n"
+                f"   - Available: {available}\n"
+                f"   - Occupied: {occupied}\n"
+                f"   - Reserved: {reserved}\n"
+                f"   - Unknown: {unknown}\n"
+                f"   - Out of Service: {out_of_service}\n"
+            )
+
+        dispatcher.utter_message(text=msg)
+
+        return [
+            SlotSet("conversation_context", ConversationContexts.CHECKING_AVAILABILITY),
+            SlotSet("selected_station", station_name),
+            SlotSet("station_name", station_name)
+        ]
+    
 class ActionHandleFollowUp(Action):
     def name(self) -> Text:
         return "action_handle_follow_up"

@@ -71,6 +71,13 @@ slots:
       - type: from_entity
         entity: current_location
 
+  station_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: station_name
+
   preference_type:
     type: text
     influence_conversation: true
@@ -210,6 +217,7 @@ actions:
   - action_handle_route_info
   - action_get_directions_by_id
   - action_nearby_stations
+  - action_check_station_availability
 
 session_config:
   session_expiration_time: 60

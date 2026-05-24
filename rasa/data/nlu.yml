@@ -438,6 +438,26 @@ nlu:
     - check charger availability
     - availability
     - check if this station is available
+    - is [Carlton](station_name) station available
+    - is [Richmond](station_name) station available
+    - is [Geelong](station_name) station available
+    - is [St Kilda](station_name) station available
+    - is [Box Hill](station_name) station available
+    - check availability for [Carlton](station_name)
+    - check availability for [Richmond](station_name)
+    - check availability for [Geelong](station_name)
+    - check station status for [Carlton](station_name)
+    - check station status for [Richmond](station_name)
+    - check station status for [Geelong](station_name)
+    - is [Carlton](station_name) available
+    - is [Richmond](station_name) available
+    - is [Geelong](station_name) available
+    - is [Carlton](station_name) free
+    - is [Richmond](station_name) free
+    - is [Geelong](station_name) free
+    - is [Carlton](station_name) busy
+    - is [Richmond](station_name) busy
+    - is [Geelong](station_name) busy
 
 - intent: nearby_stations
   examples: |
