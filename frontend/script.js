@@ -1,3 +1,6 @@
+// Set RASA_URL in window (injected by deploy) or fall back to local dev
+const RASA_URL = window.RASA_URL || "http://localhost:5005";
+
 const chat = document.getElementById("chat");
 const form = document.getElementById("chat-form");
 const userInput = document.getElementById("user-input");
@@ -256,36 +259,33 @@ function addDirectionsCard(payload) {
     : typeof payload.instructions === "string"
       ? [payload.instructions]
       : [];
-  addCard(`
-    <div><strong>🗺️ Directions</strong></div>
-    <div>${payload.origin} → ${payload.destination}</div>
-    <div>Distance: ${payload.distance_km != null ? payload.distance_km.toFixed(1) + " km" : "—"
-    } | ETA: ${payload.eta_min != null ? Math.round(payload.eta_min) + " min" : "—"
-    }${payload.delay_min ? ` (+${Math.round(payload.delay_min)} min traffic)` : ""}</div>
-    ${payload.maps_url ? `
-  <div class="map-card">
-    <iframe
-      src="${payload.maps_url}&output=embed"
-      width="100%"
-      height="200"
-      style="border:0; border-radius:10px;"
-      allowfullscreen=""
-      loading="lazy"
-      referrerpolicy="no-referrer-when-downgrade">
-    </iframe>
-    <div style="margin-top:6px; text-align:center">
-      <a href="${payload.maps_url}" target="_blank" rel="noopener" class="btn-map">Open in Google Maps</a>
-    </div>
-  </div>` : ""}
-    }
-    ${steps.length
-      ? `<ol style="margin:8px 0 0 18px">${steps
-        .slice(0, 8)
-        .map((s) => `<li>${s}</li>`)
-        .join("")}</ol>`
-      : ""
-    }
-  `);
+
+  const distTxt  = payload.distance_km != null ? payload.distance_km.toFixed(1) + " km" : "—";
+  const etaTxt   = payload.eta_min  != null ? Math.round(payload.eta_min) + " min" : "—";
+  const delayTxt = payload.delay_min ? ` (+${Math.round(payload.delay_min)} min traffic)` : "";
+
+  // Proper embed URL needs maps.google.com?q=lat,lng format
+  const embedUrl = (payload.station_lat != null && payload.station_lng != null)
+    ? `https://maps.google.com/maps?q=${payload.station_lat},${payload.station_lng}&output=embed`
+    : null;
+
+  const mapHtml  = (embedUrl || payload.maps_url)
+    ? `<div class="map-card" style="margin:8px 0 4px"><iframe src="${embedUrl || (payload.maps_url + '&output=embed')}" width="100%" height="180" style="border:0;border-radius:10px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>`
+    : "";
+  const linkHtml = payload.maps_url
+    ? `<div style="text-align:center;margin-bottom:4px"><a href="${payload.maps_url}" target="_blank" rel="noopener" class="btn-map">Open in Google Maps</a></div>`
+    : "";
+  const stepsHtml = steps.length
+    ? `<ol style="margin:6px 0 0 18px">${steps.slice(0, 8).map(s => `<li>${s}</li>`).join("")}</ol>`
+    : "";
+
+  addCard(
+    `<div style="font-weight:600;margin-bottom:4px">🗺️ Directions</div>` +
+    `<div style="margin-bottom:2px">${payload.origin} → ${payload.destination}</div>` +
+    `<div style="color:#6b7280;font-size:13px;margin-bottom:6px">` +
+      `Distance: ${distTxt} | ETA: ${etaTxt}${delayTxt}</div>` +
+    mapHtml + linkHtml + stepsHtml
+  );
 }
 
 function addTrafficCard(payload) {
@@ -334,9 +334,9 @@ async function sendLocationToRasa() {
   const payload = {
     sender: "user",
     message: "hello",
-    metadata: userLocation,
+    metadata: userLocation || {},
   };
-  const res = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+  const res = await fetch(`${RASA_URL}/webhooks/rest/webhook`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -362,29 +362,23 @@ function attachStationDirectionsHandlers() {
 }
 
 window.onload = async () => {
-  const stored = localStorage.getItem("chatHistory");
-  if (stored) chat.innerHTML = stored;
-  attachStationDirectionsHandlers();
+  // Always start fresh — don't restore stale history from a previous session
+  localStorage.removeItem("chatHistory");
+  chat.innerHTML = "";
 
   // measure single-line height once
   userInput.style.height = 'auto';
   baseInputHeight = userInput.scrollHeight;
 
-  addMessage("Hello! Welcome to Melbourne EV Charging Assistant! ⚡", "bot");
-  addMessage("📍 **Getting your location…**", "bot");
-  addMessage("Please accept the location permission when prompted.", "bot");
-
   try {
     const loc = await getUserLocation();
     userLocation = { lat: loc.coords.latitude, lng: loc.coords.longitude };
-    addMessage("✅ **Location detected!** Now I can help you find the best charging options.", "bot");
-    await sendLocationToRasa();
   } catch (e) {
-    addMessage(
-      "⚠️ Location access denied. Please type your suburb name (e.g., 'Richmond') to continue.",
-      "bot"
-    );
+    // Location denied — Rasa will ask for a suburb name instead
   }
+
+  // Let Rasa send the welcome message; don't duplicate it here
+  await sendLocationToRasa();
 };
 
 /* ---------- Messaging ---------- */
@@ -392,7 +386,7 @@ async function sendMessage(message) {
   typingIndicator.classList.remove("hidden");
   try {
     const payload = { sender: "user", message, metadata: userLocation || {} };
-    const response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
+    const response = await fetch(`${RASA_URL}/webhooks/rest/webhook`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

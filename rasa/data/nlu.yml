@@ -33,28 +33,56 @@ nlu:
     - hey dude please
     - goodmorning please
     - goodevening please
-    - hey
-    - hey there
-    - hey dude
-    - hey please
-    - hey there please
     - start
- 
 
 - intent: menu_selection
   examples: |
     - 1
     - 2
     - 3
+    - route planning
+    - plan route
+    - emergency charging
+    - emergency
+    - charging preferences
+    - preference charging
 
+- intent: affirm
+  examples: |
+    - yes
+    - yeah
+    - yep
+    - sure
+    - ok
+    - okay
+    - yes please
+    - yes thanks
+    - go ahead
+    - sounds good
+    - absolutely
+    - definitely
+    - of course
+
+- intent: deny
+  examples: |
+    - no
+    - nope
+    - no thanks
+    - not now
+    - skip it
+    - never mind
+    - no thank you
+    - nah
 
 - intent: goodbye
   examples: |
     - bye
     - pp
     - gud bye
-
-
+    - goodbye
+    - thanks bye
+    - see you
+    - thank you
 
 - intent: route_planning
   examples: |
@@ -96,6 +124,164 @@ nlu:
     - critical charging
     - immediate charging
 
+- intent: route_info
+  examples: |
+    - from [Carlton](start_location) to [Geelong](end_location)
+    - from [Richmond](start_location) to [South Yarra](end_location)
+    - from [Melbourne](start_location) to [Brighton](end_location)
+    - route from [Docklands](start_location) to [Frankston](end_location)
+    - i am going from [Brunswick](start_location) to [Dandenong](end_location)
+    - travel from [St Kilda](start_location) to [Geelong](end_location)
+    - from [Richmond](start_location) to [Dandenong](end_location)
+    - [Richmond](start_location) to [Dandenong](end_location)
+    - traveling from [Richmond](start_location) to [Dandenong](end_location)
+    - driving from [Richmond](start_location) to [Dandenong](end_location)
+    - i'm going from [Richmond](start_location) to [Dandenong](end_location)
+    - need route from [Richmond](start_location) to [Dandenong](end_location)
+    - driving to [South Yarra](end_location)
+    - from [Richmond](start_location) to [Frankston](end_location)
+    - [Richmond](start_location) to [Frankston](end_location)
+    - [Carlton](start_location) to [Geelong](end_location)
+    - from [Melbourne](start_location) to [Bendigo](end_location)
+    - [Melbourne](start_location) to [Bendigo](end_location)
+    - from [South Yarra](start_location) to [St Kilda](end_location)
+    - [South Yarra](start_location) to [St Kilda](end_location)
+    - from [Brunswick](start_location) to [Northcote](end_location)
+    - [Brunswick](start_location) to [Northcote](end_location)
+    - from [Footscray](start_location) to [Williamstown](end_location)
+    - [Footscray](start_location) to [Williamstown](end_location)
+    - from [Preston](start_location) to [Reservoir](end_location)
+    - [Preston](start_location) to [Reservoir](end_location)
+    - from Carlton to Geelong
+    - from Richmond to Brighton
+    - from Melbourne to Frankston
+    - From Mulgrave to Collingwood
+    - from mulgrave to collingwood
+    - from Mulgrave to Ringwood
+    - from Mulgrave to Port Melbourne
+    - i'm travelling from Mulgrave to Collingwood
+    - I am going from Carlton to Port Melbourne
+    - plan route from Richmond to Collingwood
+    - route from Box Hill to Ringwood
+    - drive from Dandenong to Melbourne
+    - need route from St Kilda to Carlton
+    - go from Geelong to Melbourne
+    - from Glen Waverley to CBD
+    - from Camberwell to South Melbourne
+    - from Doncaster to Port Melbourne
+    - can you plan from Richmond to Ringwood
+    - show route from Brunswick to Docklands
+    - take me from Collingwood to Carlton
+    - from Mulgrave to Collingwood please
+    - route: from Mulgrave to Collingwood
+    - from Hawthorn to South Yarra
+    - to [Melbourne](end_location)
+    - to [Geelong](end_location)
+    - to [Richmond](end_location)
+    - to [Carlton](end_location)
+    - to [South Yarra](end_location)
+    - to [St Kilda](end_location)
+    - [Docklands](end_location)
+    - [Glenroy](end_location)
+    - [Fawkner](end_location)
+    - [Carlton](end_location)
+    - [Richmond](end_location)
+    - [Melbourne](end_location)
+    - [South Yarra](end_location)
+    - [Geelong](end_location)
+    - [Brunswick](end_location)
+    - [Footscray](end_location)
+    - [St Kilda](end_location)
+    - [Dandenong](end_location)
+    - [Collingwood](end_location)
+    - [Frankston](end_location)
+    - go to [Docklands](end_location)
+    - destination [Glenroy](end_location)
+    - heading to [Fawkner](end_location)
+    - travelling to [Docklands](end_location)
+
+- intent: action_selection
+  examples: |
+    - get directions
+    - directions
+    - check availability
+    - plan another route
+    - return to main menu
+    - main menu
+    - go back to menu
+    - compare options
+    - show alternatives
+    - compare with others
+    - check if available
+    - show other options
+    - compare stations
+    - availability check
+    - navigate
+    - route
+    - drive
+    - go to
+    - compare
+    - comparison
+    - alternative
+    - other
+    - options
+    - available
+    - availability
+    - status
+    - check
+    - open
+    - compare options please
+    - check availability please
+    - show alternatives please
+    - give me directions please
+    - compare with others please
+    - check if available please
+    - show other options please
+    - directions please
+    - compare stations please
+    - availability check please
+
+- intent: follow_up
+  examples: |
+    - show more options
+    - any other stations
+    - can you suggest another one
+    - start again
+    - what else can i do
+    - alternative routes
+    - other routes
+    - different way
+    - save location
+    - bookmark
+    - favorite
+    - go back
+    - return
+    - previous
+    - new route
+    - plan route
+    - different route
+    - start navigation
+    - take route
+    - alternative route
+    - other route
+    - save
+    - save route
+    - bookmark location
+    - favorite location
+    - go back to stations
+    - return to stations
+    - previous stations
+    - new journey
+    - plan new route
+    - different journey
+    - start navigation please
+    - take route please
+    - navigate please
+    - done please
+    - complete please
+    - finish please
+    - end please
+
 - intent: emergency_location_input
   examples: |
     - [in Frankston](current_location)
@@ -111,6 +297,80 @@ nlu:
     - [Brunswick](current_location)
     - [Docklands](current_location)
     - [Footscray](current_location)
+    - [Vermont South](current_location)
+    - [Box Hill](current_location)
+    - [Ringwood](current_location)
+    - [Oakleigh](current_location)
+    - [Hawthorn](current_location)
+    - [Camberwell](current_location)
+    - [Toorak](current_location)
+    - [Prahran](current_location)
+    - [Windsor](current_location)
+    - [Fitzroy](current_location)
+    - [Northcote](current_location)
+    - [Thornbury](current_location)
+    - [Preston](current_location)
+    - [Reservoir](current_location)
+    - [Coburg](current_location)
+    - [Heidelberg](current_location)
+    - [Greensborough](current_location)
+    - [Eltham](current_location)
+    - [Bundoora](current_location)
+    - [Mill Park](current_location)
+    - [Epping](current_location)
+    - [Craigieburn](current_location)
+    - [Lalor](current_location)
+    - [Thomastown](current_location)
+    - [Doncaster](current_location)
+    - [Templestowe](current_location)
+    - [Mitcham](current_location)
+    - [Nunawading](current_location)
+    - [Blackburn](current_location)
+    - [Forest Hill](current_location)
+    - [Mooroolbark](current_location)
+    - [Croydon](current_location)
+    - [Lilydale](current_location)
+    - [Moorabbin](current_location)
+    - [Bentleigh](current_location)
+    - [Cheltenham](current_location)
+    - [Mentone](current_location)
+    - [Mordialloc](current_location)
+    - [Seaford](current_location)
+    - [Langwarrin](current_location)
+    - [Mornington](current_location)
+    - [Cranbourne](current_location)
+    - [Berwick](current_location)
+    - [Narre Warren](current_location)
+    - [Pakenham](current_location)
+    - [Officer](current_location)
+    - [Werribee](current_location)
+    - [Hoppers Crossing](current_location)
+    - [Point Cook](current_location)
+    - [Tarneit](current_location)
+    - [Wyndham Vale](current_location)
+    - [Melton](current_location)
+    - [Caroline Springs](current_location)
+    - [Sunshine](current_location)
+    - [Altona](current_location)
+    - [Williamstown](current_location)
+    - [Yarraville](current_location)
+    - [Seddon](current_location)
+    - [Laverton](current_location)
+    - [Port Melbourne](current_location)
+    - [Albert Park](current_location)
+    - [Middle Park](current_location)
+    - [Southbank](current_location)
+    - [Kew](current_location)
+    - [Balwyn](current_location)
+    - [Canterbury](current_location)
+    - [Armadale](current_location)
+    - [Glen Waverley](current_location)
+    - [Mount Waverley](current_location)
+    - [Wheelers Hill](current_location)
+    - [Clayton](current_location)
+    - [Springvale](current_location)
+    - [Noble Park](current_location)
+    - [Keysborough](current_location)
 
 - intent: emergency_connector_input
   examples: |
@@ -138,7 +398,6 @@ nlu:
     - I need a CCS charger
     - chademo connector
 
-
 - intent: preference_charging
   examples: |
     - cheapest charging
@@ -150,38 +409,30 @@ nlu:
     - luxury charging
     - budget charging
     - ultra fast charging
-    
     - cheapest option
     - fastest option
     - premium option
-    
     - show me [cheapest](preference_type) charging
     - find [fastest](preference_type) chargers
-    
     - [premium](preference_type) charging
     - preference charging
     - charging preferences
     - help with preferences
     - preference charging help
 
-
 - intent: preference_selection
   examples: |
     - [cheapest](preference_type)
     - [fastest](preference_type)
-    
     - [premium](preference_type)
     - i prefer [cheapest](preference_type)
     - show [fastest](preference_type)
-    
     - let's go with [premium](preference_type)
     - choose [cheapest](preference_type)
     - select [fastest](preference_type)
-    
     - pick [premium](preference_type)
     - go with [cheapest](preference_type)
     - go with [fastest](preference_type)
-    
     - go with [premium](preference_type)
 
 - intent: preference_location_input
@@ -198,6 +449,80 @@ nlu:
     - i am located in [Docklands](current_location)
     - in [Melbourne](current_location)
     - in [Carlton](current_location)
+    - [Vermont South](current_location)
+    - [Box Hill](current_location)
+    - [Ringwood](current_location)
+    - [Oakleigh](current_location)
+    - [Hawthorn](current_location)
+    - [Camberwell](current_location)
+    - [Toorak](current_location)
+    - [Prahran](current_location)
+    - [Windsor](current_location)
+    - [Fitzroy](current_location)
+    - [Northcote](current_location)
+    - [Thornbury](current_location)
+    - [Preston](current_location)
+    - [Reservoir](current_location)
+    - [Coburg](current_location)
+    - [Heidelberg](current_location)
+    - [Greensborough](current_location)
+    - [Eltham](current_location)
+    - [Bundoora](current_location)
+    - [Mill Park](current_location)
+    - [Epping](current_location)
+    - [Craigieburn](current_location)
+    - [Lalor](current_location)
+    - [Doncaster](current_location)
+    - [Mitcham](current_location)
+    - [Nunawading](current_location)
+    - [Blackburn](current_location)
+    - [Forest Hill](current_location)
+    - [Mooroolbark](current_location)
+    - [Croydon](current_location)
+    - [Lilydale](current_location)
+    - [Moorabbin](current_location)
+    - [Bentleigh](current_location)
+    - [Cheltenham](current_location)
+    - [Mentone](current_location)
+    - [Mordialloc](current_location)
+    - [Seaford](current_location)
+    - [Mornington](current_location)
+    - [Cranbourne](current_location)
+    - [Berwick](current_location)
+    - [Narre Warren](current_location)
+    - [Pakenham](current_location)
+    - [Werribee](current_location)
+    - [Hoppers Crossing](current_location)
+    - [Point Cook](current_location)
+    - [Tarneit](current_location)
+    - [Melton](current_location)
+    - [Caroline Springs](current_location)
+    - [Sunshine](current_location)
+    - [Altona](current_location)
+    - [Williamstown](current_location)
+    - [Yarraville](current_location)
+    - [Port Melbourne](current_location)
+    - [Albert Park](current_location)
+    - [Southbank](current_location)
+    - [Kew](current_location)
+    - [Balwyn](current_location)
+    - [Glen Waverley](current_location)
+    - [Mount Waverley](current_location)
+    - [Wheelers Hill](current_location)
+    - [Clayton](current_location)
+    - [Springvale](current_location)
+    - [Noble Park](current_location)
+    - [Keysborough](current_location)
+    - [Glen Iris](current_location)
+    - [Malvern](current_location)
+    - [Caulfield](current_location)
+    - [Templestowe](current_location)
+    - my suburb is [Vermont South](current_location)
+    - i'm near [Box Hill](current_location)
+    - somewhere in [Ringwood](current_location)
+    - i'm around [Glen Waverley](current_location)
+    - located in [Craigieburn](current_location)
+    - i'm at [Point Cook](current_location)
 
 - intent: route_station_selection
   examples: |
@@ -208,9 +533,7 @@ nlu:
     - Tesla Supercharger Box Hill
     - City of Stonnington
     - Forest Hill Chase Shopping Centre
-    - Swinburne University - TC Building
     - Telsa Supercharger Box Hill
-    - Malvern Central
     - [Lynbrook Village](station_name)
     - [RMIT - City Campus](station_name)
     - [ENGIE - Victoria Gardens](station_name)
@@ -224,25 +547,19 @@ nlu:
     - Collingwood Library
     - Monash Caufield
     - ENGIE - Chadstone 2
-      - Malvern Central
     - Lynbrook Village
     - RMIT - City Campus
     - Camberwell Supercharger
     - Chadstone Shopping Centre
     - Tesla Supercharger South Melbourne
     - ENGIE - Victoria Gardens
-    - Swinburne University - TC Building
     - High Street
     - Evie Portland
     - North Bellarine Aquatic Centre
     - 100 St Kilda Road
-    - Collingwood Library
     - Exploren Charging Station
     - Fleming Park
-    - Monash Caufield
     - Mont Albert
-    - Exploren Charging Station
-    - ENGIE - Chadstone 2
     - Engie - The Glen
     - Bayside Gateway
     - Tesla Supercharger Brighton East
@@ -262,12 +579,6 @@ nlu:
     - The Parade Ascot Vale Car Park
     - Moonee Ponds Central
     - St Kilda Town Hall
-    - City of Stonnington
-    - Forest Hill Chase Shopping Centre
-    - Swinburne University - TC Building
-    - Tesla Supercharger Box Hill
-    - Malvern Central
-    - Telsa Supercharger Box Hill
     - Coburg Civic Centre / Moreland City
     - Coburg Town Hall / Moreland City
     - Austin Tower Carpark Level B1
@@ -280,7 +591,6 @@ nlu:
     - Tesla Supercharger Campbellfield
     - Ampol Foodary Altona North
     - Bridge Street
-    - Tesla Supercharger Box Hill
     - Evie Glen Gala Village
     - Keilor Central
     - Tesla Supercharger Oakleigh Repair Centre
@@ -303,12 +613,7 @@ nlu:
     - Point Cook Town Centre
     - Red Rooster Vermont
     - Greenvale Woolworths
-    - Engie - The Glen
-    - Bayside Gateway
-    - Tesla Supercharger Brighton East
-    - Chargefox - Barnawartha North
 
-# Enhanced preference filtering intent
 - intent: filter_by_preferences
   examples: |
     - show me [fast](charging_speed) charging stations
@@ -341,7 +646,6 @@ nlu:
     - show me [CCS](connector_type) compatible stations
     - find [affordable](price) [Type 2](connector_type) chargers
 
-# Enhanced charger information intent
 - intent: get_charger_info
   examples: |
     - tell me about this charging station
@@ -365,7 +669,6 @@ nlu:
     - charging cost information
     - number of charging points
 
-# Traffic information intent
 - intent: get_traffic_info
   examples: |
     - how's the traffic
@@ -393,7 +696,6 @@ nlu:
     - traffic alerts
     - traffic warnings
 
-# Advanced directions intent
 - intent: get_advanced_directions
   examples: |
     - give me directions
@@ -419,6 +721,45 @@ nlu:
     - show directions
     - route guidance please
 
+- intent: station_availability
+  examples: |
+    - is this station available
+    - is this station available?
+    - is the station available
+    - is the charger available
+    - is this charger available
+    - is this charger free
+    - is this station free
+    - is the charging station free
+    - can i use this station
+    - can i use this charger
+    - is the station busy
+    - is this charger busy
+    - is this station occupied
+    - is there a free charger here
+    - are there any chargers available
+    - check station availability
+    - check charger availability
+    - availability
+    - check if this station is available
+
+- intent: nearby_stations
+  examples: |
+    - are there charging stations near me
+    - are there chargers near me
+    - find charging stations near me
+    - show nearby charging stations
+    - show nearby chargers
+    - where is the nearest charging station
+    - nearest charging station
+    - find stations near [Richmond](current_location)
+    - find stations near [Burwood](current_location)
+    - are there charging stations near [Burwood](current_location)
+    - charging stations near [Melbourne](current_location)
+    - chargers near [Carlton](current_location)
+    - nearby stations
+    - nearby chargers
+
 - intent: emergency_station_selection
   examples: |
     - [station_name]
@@ -436,18 +777,8 @@ nlu:
     - [North Bellarine Aquatic Centre]
     - [High Street]
     - [bp pulse Dandenong North]
-    - [Swinburne University - TC Building]
-    - [Monash Caufield]
-    - [RACV Solar Grovedale]
-    - [Forest Hill Chase Shopping Centre]
-    - [Blue Tongue Industries]
-    - [Evie Meredith]
-    - [ENGIE - Chadstone]
-    - [North Bellarine Aquatic Centre]
-    - [High Street]
     - [Engie - The Glen]
     - [Bayside Gateway]
-    - [bp pulse Dandenong North]
     - Swinburne University - TC Building
     - Monash Caufield
     - RACV Solar Grovedale
@@ -458,7 +789,6 @@ nlu:
     - North Bellarine Aquatic Centre
     - High Street
     - Fleming Park
-    - Monash Caufield
     - Exploren Charging Station
     - Mont Albert
     - Engie - The Glen
@@ -518,110 +848,103 @@ nlu:
     - i prefer [High Street]
     - i prefer [bp pulse Dandenong North]
 
-- intent: action_selection
+- intent: ask_help
   examples: |
-    - compare options
-    - check availability
-    - show alternatives
-    - compare with others
-    - check if available
-    - show other options
-    - compare stations
-    - availability check
-    - show alternatives
-    - navigate
-    - route
-    - drive
-    - go to
-    - compare
-    - comparison
-    - alternative
-    - other
-    - options
-    - available
-    - availability
-    - status
-    - check
-    - open
-    - compare options please
-    - check availability please
-    - show alternatives please
-    - give me directions please
-    - compare with others please
-    - check if available please
-    - show other options please
-    - directions please
-    - compare stations please
-    - availability check please
-    - show alternatives please
+    - help
+    - I need help
+    - can you help me
+    - what can you do
+    - what can this chatbot do
+    - how does this chatbot work
+    - I am confused
+    - show me help
+    - guide me
+    - I need some guidance
+    - what options do I have
+    - explain how to use this chatbot
 
-- intent: route_info
+- intent: explain_route_planning
   examples: |
-    - from [Richmond](start_location) to [Dandenong](end_location)
-    - [Richmond](start_location) to [Dandenong](end_location)
-    - traveling from [Richmond](start_location) to [Dandenong](end_location)
-    - driving from [Richmond](start_location) to [Dandenong](end_location)
-    - i'm going from [Richmond](start_location) to [Dandenong](end_location)
-    - need route from [Richmond](start_location) to [Dandenong](end_location)
-    - driving to [South Yarra](end_location)
-    - from [Richmond](start_location) to [Frankston](end_location)
-    - [Richmond](start_location) to [Frankston](end_location)
-    - from [Carlton](start_location) to [Geelong](end_location)
-    - [Carlton](start_location) to [Geelong](end_location)
-    - from [Melbourne](start_location) to [Bendigo](end_location)
-    - [Melbourne](start_location) to [Bendigo](end_location)
-    - from [South Yarra](start_location) to [St Kilda](end_location)
-    - [South Yarra](start_location) to [St Kilda](end_location)
-    - from [Brunswick](start_location) to [Northcote](end_location)
-    - [Brunswick](start_location) to [Northcote](end_location)
-    - from [Footscray](start_location) to [Williamstown](end_location)
-    - [Footscray](start_location) to [Williamstown](end_location)
-    - from [Preston](start_location) to [Reservoir](end_location)
-    - [Preston](start_location) to [Reservoir](end_location)
-    - to [Melbourne](end_location)
-    - to [Geelong](end_location)
-    - to [Richmond](end_location)
-    - to [Carlton](end_location)
-    - to [South Yarra](end_location)
-    - to [St Kilda](end_location)
+    - explain route planning
+    - how does route planning work
+    - what is route planning
+    - help me with route planning
+    - how can I plan a route
+    - how do I use the route planner
+    - tell me about route planning
+    - explain how to find charging stations on my route
+    - how can the chatbot help with my trip
+    - what information do I need for route planning
 
-- intent: follow_up
+- intent: current_location
   examples: |
-    - alternative routes
-    - other routes
-    - different way
-    - save location
-    - bookmark
-    - favorite
-    - go back
-    - return
-    - previous
-    - new route
-    - plan route
-    - different route
-    - start navigation
-    - take route
-    - alternative route
-    - other route
-    - different route
-    - save
-    - save route
-    - bookmark location
-    - favorite location
-    - go back to stations
-    - return to stations
-    - previous stations
-    - new journey
-    - plan new route
-    - different journey
-    - start navigation please
-    - take route please
-    - navigate please
-    - done please
-    - complete please
-    - finish please
-    - end please
+    - Richmond
+    - Carlton
+    - Geelong
+    - Box Hill
+    - Melbourne
+    - St Kilda
+    - Brighton
+    - Dandenong
+    - Docklands
+    - Frankston
+    - South Yarra
+    - Burwood
+    - in Richmond
+    - in Carlton
+    - in Geelong
+    - in Box Hill
+    - in Melbourne
+    - my location is Richmond
+    - my location is Carlton
+    - I am in Richmond
+    - I am in Carlton
+    - I am in Geelong
 
+- intent: restart
+  examples: |
+    - restart
+    - start over
+    - reset
+    - begin again
+    - restart chatbot
+    - start from the beginning
+    - reset conversation
+    - clear and restart
+
+- intent: ask_congestion_prediction
+  examples: |
+    - congestion prediction
+    - give me a congestion prediction
+    - can you predict congestion
+    - show me congestion prediction
+    - I want congestion prediction
+    - predict congestion for [Box Hill](location)
+    - give me congestion prediction for [Box Hill](location)
+    - what is the congestion level at [Box Hill](location)
+    - how busy is [Box Hill](location)
+    - is [Box Hill](location) crowded
+    - check congestion at [Box Hill](location)
+    - congestion status at [Box Hill](location)
+    - congestion forecast for [Box Hill](location)
+    - what is the crowd level at [Box Hill](location)
+    - how crowded is [Box Hill](location)
+    - is there heavy congestion at [Box Hill](location)
+    - show congestion level for [Box Hill](location)
+    - give me the congestion forecast for [Box Hill](location)
+    - check how busy [Box Hill](location) is
+    - tell me the congestion prediction for [Box Hill](location)
+    - what is the expected congestion at [Box Hill](location)
+    - forecast congestion for [Box Hill](location)
+    - is [Box Hill](location) busy right now
+    - how much congestion is there at [Box Hill](location)
+    - congestion at [Box Hill](location)
+    - crowd prediction for [Box Hill](location)
+    - traffic congestion prediction for [Box Hill](location)
+    - congestion prediction to [Box Hill](location)
+    - predict congestion for [Richmond](location)
+    - congestion at [Docklands](location)
+    - how busy is [Carlton](location)
 
 - lookup: charging_speed
   examples: |
@@ -693,7 +1016,6 @@ nlu:
     - Fleming Park
     - Monash Caufield
     - Mont Albert
-    - Exploren Charging Station
     - ENGIE - Chadstone 2
     - Engie - The Glen
     - Bayside Gateway
@@ -716,9 +1038,7 @@ nlu:
     - St Kilda Town Hall
     - City of Stonnington
     - Forest Hill Chase Shopping Centre
-    - Swinburne University - TC Building
     - Tesla Supercharger Box Hill
-    - Malvern Central
     - Telsa Supercharger Box Hill
     - Coburg Civic Centre / Moreland City
     - Coburg Town Hall / Moreland City
@@ -732,7 +1052,6 @@ nlu:
     - Tesla Supercharger Campbellfield
     - Ampol Foodary Altona North
     - Bridge Street
-    - Tesla Supercharger Box Hill
     - Evie Glen Gala Village
     - Keilor Central
     - Tesla Supercharger Oakleigh Repair Centre
@@ -755,3 +1074,19 @@ nlu:
     - Point Cook Town Centre
     - Red Rooster Vermont
     - Greenvale Woolworths
+
+- lookup: congestion
+  examples: |
+    - crowded
+    - busy
+    - heavy traffic
+    - traffic jam
+    - jammed
+    - packed
+    - full
+    - overloaded
+    - high density
+    - high crowd level
+    - high occupancy
+    - heavy load
+    - high usage
