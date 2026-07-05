@@ -19,6 +19,9 @@ pipeline:
     epochs: 100
     learning_rate: 0.001
   - name: EntitySynonymMapper
+  - name: FallbackClassifier
+    threshold: 0.65
+    ambiguity_threshold: 0.1
   - name: ResponseSelector
     epochs: 100
     learning_rate: 0.001
